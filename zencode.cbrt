@@ -1,0 +1,82 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+%scanner%
+%prefix zen_
+
+%token INTEGER DECIMAL CHARACTER TRUE FALSE NULL ENDL TAB ITAB IENDL END MAIN
+%token ID BOOL CHAR CUSTOM DEC FILE FUNCTION INT MATRIX PRIVATE PUBLIC TEXT VOID
+%token BREAK BY CASE DEFAULT DO ELSE FORALL IMPORT IF IN LOOP RETURN SWITCH UNTIL WHILE
+%token ASTRK AMPSD ANG_L ANG_R CARET EQUAL NDASH NEQUAL PIPE PLUS POUND SLASH TILDE
+%token BOX_L BOX_R BRACE_L BRACE_R COLON COMMA DOT PARN_L PARN_R SMCLN CREAD CWRITE
+
+: [\ \n]+;
+AMPSD     : &;
+ANG_L     : <;
+ANG_R     : >;
+ASTRK     : \*;
+BOOL      : bool;
+BOX_L     : \[;
+BOX_R     : \];
+BRACE_L   : {;
+BRACE_R   : };
+BREAK     : break;
+BY        : by;
+CARET     : ^;
+CASE      : case;
+CHAR      : char;
+CHARACTER : *;
+COLON     : \:;
+COMMA     : \,;
+CREAD     : cread;
+CUSTOM    : custom;
+CWRITE    : cwrite;
+DEC       : dec;
+DECIMAL   : \-?[1-9][0-9]*\.[0-9]*[1-9] { $$ = atof($text); }
+DEFAULT   : default;
+DO        : do;
+DOT       : \.;
+ELSE      : else;
+END       : end;
+ENDL      : endl;
+EQUAL     : =;
+FALSE     : False;
+FILE      : file;
+FORALL    : forall;
+FUNCTION  : function;
+ID        : [a-zA-Z_][a-zA-Z0-9_]*;
+IENDL     : \n;
+IF        : if;
+IMPORT    : #import;
+IN        : in;
+INT       : int;
+INTEGER   : \-?[1-9][0-9]* { $$ = atoi($text); }
+ITAB      : \t;
+LOOP      : loop;
+MAIN      : main;
+MATRIX    : matrix;
+NDASH     : \-;
+NEQUAL    : ><;
+NULL      : Null;
+PIPE      : |;
+PLUS      : \+;
+POUND     : #;
+PRIVATE   : private;
+PUBLIC    : public;
+RETURN    : return;
+SLASH     : /;
+SMCLN     : /;;
+SWITCH    : switch;
+TAB       : tab;
+TEXT      : text;
+TILDE     : ~;
+TRUE      : True;
+UNTIL     : until;
+VOID      : void;
+WHILE     : while;
+
+%%
+void report_error(const char *msg) {
+  fprintf(stderr, "%s", msg);
+}
+%%
