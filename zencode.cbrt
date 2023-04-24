@@ -4,16 +4,19 @@
 %scanner%
 %prefix zen_
 
-%token INTEGER DECIMAL CHARACTER TRUE FALSE NULL ENDL TAB ITAB IENDL END MAIN
-%token ID BOOL CHAR CUSTOM DEC FILE FUNCTION INT MATRIX PRIVATE PUBLIC TEXT VOID
-%token BREAK BY CASE DEFAULT DO ELSE FORALL IMPORT IF IN LOOP RETURN SWITCH UNTIL WHILE
-%token ASTRK AMPSD ANG_L ANG_R CARET EQUAL NDASH NEQUAL PIPE PLUS POUND SLASH TILDE
-%token BOX_L BOX_R BRACE_L BRACE_R COLON COMMA DOT PARN_L PARN_R SMCLN CREAD CWRITE
+%token INTEGER DECIMAL CHARACTER STRING TRUE FALSE NULL ENDL TAB END MAIN
+%token ID BOOL CHAR CONSTR CUSTOM DEC FILE FUNCTION INT LIST MATRIX PRIVATE PUBLIC TEXT VOID
+%token BREAK BY CASE DEFAULT DO ELSE FOREACH IMPORT IF IN LOOP NEXT RETURN SWITCH UNTIL WHILE
+%token AND ANG_L ANG_R ASSIGN ASTRK CARET EQUAL MODULO NDASH NEQUAL OR PLUS POUND SLASH TILDE
+%token BOX_L BOX_R BRACE_L BRACE_R COLON COMMA DOT PARNT_L PARNT_R SMCLN
+%token APPLY CREAD CWRITE FOLDL FOLDR LAMBDA INTO USING
 
 : [\ \n]+;
-AMPSD     : &;
+AND       : &&;
 ANG_L     : <;
 ANG_R     : >;
+APPLY     : apply;
+ASSIGN    : <<;
 ASTRK     : \*;
 BOOL      : bool;
 BOX_L     : \[;
@@ -22,17 +25,18 @@ BRACE_L   : {;
 BRACE_R   : };
 BREAK     : break;
 BY        : by;
-CARET     : ^;
+CARET     : \^;
 CASE      : case;
 CHAR      : char;
-CHARACTER : *;
+CHARACTER : [^ \t\n\r];
 COLON     : \:;
 COMMA     : \,;
+CONSTR    : constructor;
 CREAD     : cread;
 CUSTOM    : custom;
 CWRITE    : cwrite;
 DEC       : dec;
-DECIMAL   : \-?[1-9][0-9]*\.[0-9]*[1-9] { $$ = atof($text); }
+DECIMAL   : \-?[0-9]*\.[0-9]*[1-9] { $$ = atof($text); }
 DEFAULT   : default;
 DO        : do;
 DOT       : \.;
@@ -41,24 +45,30 @@ END       : end;
 ENDL      : endl;
 EQUAL     : =;
 FALSE     : False;
-FILE      : file;
-FORALL    : forall;
+FOLDL     : foldleft;
+FOLDR     : foldright;
+FOREACH   : foreach;
 FUNCTION  : function;
 ID        : [a-zA-Z_][a-zA-Z0-9_]*;
-IENDL     : \n;
 IF        : if;
-IMPORT    : #import;
+IMPORT    : import;
 IN        : in;
 INT       : int;
+INTO      : into;
 INTEGER   : \-?[1-9][0-9]* { $$ = atoi($text); }
-ITAB      : \t;
+LAMBDA    : lambda;
+LIST      : list;
 LOOP      : loop;
 MAIN      : main;
 MATRIX    : matrix;
+MODULO    : %;
 NDASH     : \-;
 NEQUAL    : ><;
+NEXT      : next;
 NULL      : Null;
-PIPE      : |;
+OR        : ||;
+PARNT_L   : \(;
+PARNT_R   : \);
 PLUS      : \+;
 POUND     : #;
 PRIVATE   : private;
@@ -66,14 +76,240 @@ PUBLIC    : public;
 RETURN    : return;
 SLASH     : /;
 SMCLN     : /;;
+STRING    : *;
 SWITCH    : switch;
 TAB       : tab;
 TEXT      : text;
 TILDE     : ~;
 TRUE      : True;
 UNTIL     : until;
+USING     : using;
 VOID      : void;
 WHILE     : while;
+
+%nt applys args assigns base cases cnstrdef comment comparison compop 
+%nt conds condition console constant customdef customkey dowhiles 
+%nt expression factor folds foreachs funccall functions functiondef 
+%nt imports jumps lambdacall logicop loops mains program statement 
+%nt structstat switchs term type var vars voidfdef whiles
+%nt auxa auxb auxc auxd auxe auxf auxg auxh auxi auxj auxk auxl auxm
+%nt auxn auxo auxp
+
+%grammar%
+
+program: imports auxa main;
+program: imports main;
+program: auxa main;
+auxa: auxb auxc auxd;
+auxa: auxb auxc;
+auxa: auxb auxd;
+auxa: auxc auxd;
+auxa: auxb;
+auxa: auxc;
+auxa: auxd;
+auxb: customdef auxb;
+auxb: customdef;
+auxc: vars auxc;
+auxc: vars;
+auxd: functiondef auxd;
+auxd: functiondef;
+
+imports: IMPORT COLON STRING;
+
+statement: vars;
+statement: assign;
+statement: conds;
+statement: whiles;
+statement: dowhiles;
+statement: loops;
+statement: foreachs;
+statement: switchs;
+statement: jumps;
+statement: funccall;
+statement: applys;
+statement: folds;
+statement: console;
+statement: comment;
+
+vars: type var SMCLN;
+
+type: INT;
+type: DEC;
+type: CHAR;
+type: BOOL;
+type: TEXT;
+type: customkey;
+
+customkey: ID;
+
+var: auxe;
+var: LIST auxf;
+var: MATRIX auxg;
+auxe: ID COMMA auxe;
+auxe: ID;
+auxf: ID BOX_L INTEGER BOX_R COMMA auxf;
+auxf: ID BOX_L INTEGER BOX_R;
+auxg: ID BOX_L INTEGER COMMA INTEGER BOX_R COMMA auxg;
+auxg: ID BOX_L INTEGER COMMA INTEGER BOX_R;
+
+assigns: auxh auxi SMCLN;
+auxh: ID ASSIGN auxh;
+auxh: ID ASSIGN;
+auxi: ID;
+auxi: expression;
+auxi: constant;
+
+conds: IF condition BRACE_L auxj BRACE_R ELSE BRACE_L auxj BRACE_R;
+conds: IF condition statement ELSE BRACE_L auxj BRACE_R;
+conds: IF condition BRACE_L auxj BRACE_R ELSE statement;
+conds: IF condition statement ELSE statement;
+conds: IF condition BRACE_L auxj BRACE_R;
+conds: IF condition statement;
+auxj: statement auxj;
+auxj: statement;
+
+condition: PARNT_L auxk PARNT_R;
+auxk: TILDE comparison logicop auxk;
+auxk: TILDE comparison;
+auxk: comparison logicop auxk;
+auxk: comparison;
+
+comparison: auxi compop auxi;
+
+whiles: WHILE condition BRACE_L auxj BRACE_R;
+whiles: WHILE condition BRACE_L BRACE_R;
+whiles: WHILE condition statement;
+
+dowhiles: DO BRACE_L auxj BRACE_R WHILE condition;
+dowhiles: DO BRACE_L BRACE_R WHILE condition;
+dowhiles: DO statement WHILE condition;
+
+loops: LOOP ID BY expression UNTIL condition BRACE_L auxj BRACE_R;
+loops: LOOP ID BY expression UNTIL condition BRACE_L BRACE_R;
+loops: LOOP ID BY expression UNTIL condition statement;
+loops: LOOP ID UNTIL condition BRACE_L auxj BRACE_R;
+loops: LOOP ID UNTIL condition BRACE_L BRACE_R;
+loops: LOOP ID UNTIL condition statement;
+
+foreachs: FOREACH ID IN ID BRACE_L auxj BRACE_R;
+foreachs: FOREACH ID IN ID BRACE_L BRACE_R;
+foreachs: FOREACH ID IN ID statement;
+
+switchs: SWITCH PARNT_L ID PARNT_R BRACE_L auxl BRACE_R;
+switchs: SWITCH PARNT_L ID PARNT_R BRACE_L BRACE_R;
+switchs: SWITCH PARNT_L expression PARNT_R BRACE_L auxl BRACE_R;
+switchs: SWITCH PARNT_L expression PARNT_R BRACE_L BRACE_R;
+auxl: cases auxl;
+auxl: cases;
+
+cases: CASE COLON auxj BREAK SMCLN;
+cases: CASE COLON BREAK SMCLN;
+cases: DEFAULT COLON auxj BREAK SMCLN;
+cases: DEFAULT COLON BREAK SMCLN;
+
+jumps: BREAK SMCLN;
+jumps: NEXT SMCLN;
+jumps: RETURN ID SMCLN;
+jumps: RETURN expression SMCLN;
+
+funccall: ID COLON ID PARNT_L args PARNT_R SMCLN;
+funccall: ID COLON ID PARNT_L PARNT_R SMCLN;
+funccall: ID PARNT_L args PARNT_R SMCLN;
+funccall: ID PARNT_L PARNT_R SMCLN;
+
+applys: APPLY function INTO ID SMCLN;
+applys: APPLY lambdacall INTO ID SMCLN;
+
+folds: FOLDL ID INTO ID USING function SMCLN;
+folds: FOLDL ID INTO ID USING lambdacall SMCLN;
+folds: FOLDR ID INTO ID USING function SMCLN;
+folds: FOLDR ID INTO ID USING lambdacall SMCLN;
+
+functions: ID COLON ID PARNT_L args PARNT_R;
+functions: ID COLON ID PARNT_L PARNT_R;
+functions: ID PARNT_L args PARNT_R;
+functions: ID PARNT_L PARNT_R;
+
+lambdacall: LAMBDA PARNT_L vars PARNT_R BRACE_L auxj RETURN auxi BRACE_R;
+
+console: CREAD auxm SMCLN;
+console: CWRITE auxm SMCLN;
+auxm: ASSIGN auxn auxm;
+auxm: ASSIGN auxn;
+auxn: ID;
+auxn: constant;
+auxn: expression;
+auxn: TAB;
+auxn: ENDL;
+
+comment: POUND POUND auxo POUND POUND;
+comment: POUND POUND POUND POUND;
+auxo: CHARACTER auxo;
+auxo: CHARACTER;
+
+constant: INTEGER;
+constant: DECIMAL;
+constant: CHARACTER;
+constant: TRUE;
+constant: STRING;
+constant: FALSE;
+constant: NULL;
+
+functiondef: FUNCTION type ID COLON ID PARNT_L args PARNT_R BRACE_L auxj RETURN auxi BRACE_R;
+functiondef: FUNCTION type ID COLON ID PARNT_L args PARNT_R BRACE_L RETURN auxi BRACE_R;
+functiondef: FUNCTION type PARNT_L args PARNT_R BRACE_L auxj RETURN auxi BRACE_R;
+functiondef: FUNCTION type PARNT_L args PARNT_R BRACE_L RETURN auxi BRACE_R;
+functiondef: voidfdef;
+
+voidfdef: FUNCTION VOID ID COLON ID PARNT_L args PARNT_R BRACE_L auxj BRACE_R;
+voidfdef: FUNCTION VOID ID PARNT_L args PARNT_R BRACE_L auxj BRACE_R;
+
+customdef: CUSTOM ID PARNT_L PRIVATE COLON auxp PUBLIC COLON auxp PARNT_R SMCLN;
+customdef: CUSTOM ID PARNT_L PUBLIC COLON auxp PRIVATE COLON auxp PARNT_R SMCLN;
+customdef: CUSTOM ID PARNT_L PRIVATE COLON auxp PARNT_R SMCLN;
+customdef: CUSTOM ID PARNT_L PUBLIC COLON auxp PARNT_R SMCLN;
+auxp: structstat auxp;
+auxp: structstat;
+
+structstat: vars;
+structstat: functiondef;
+structstat: cnstrdef;
+
+cnstrdef: CONSTR PARNT_L args PARNT_R BRACE_L auxj BRACE_R;
+
+args: type var COMMA args;
+args: type var;
+
+expression: term PLUS expression;
+expression: term NDASH expression;
+expression: term;
+
+term: base ASTRK term;
+term: base SLASH term;
+term: base;
+
+base: factor MODULO factor;
+base: factor CARET factor;
+base: factor;
+
+factor: PARNT_L expression PARNT_R;
+factor: PLUS constant;
+factor: NDASH constant;
+factor: constant;
+
+logicop: AND;
+logicop: OR;
+logicop: TILDE;
+
+compop: ANG_L EQUAL;
+compop: ANG_L;
+compop: ANG_R EQUAL;
+compop: ANG_R;
+compop: EQUAL;
+compop: NEQUAL;
+
+mains: MAIN BRACE_L auxj END BRACE_R;
+mains: MAIN BRACE_L END BRACE_R;
 
 %%
 void report_error(const char *msg) {
