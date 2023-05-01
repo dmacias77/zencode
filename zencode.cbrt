@@ -1,3 +1,4 @@
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -97,6 +98,11 @@ WHILE     : while;
 
 %grammar%
 
+%type INTEGER: int
+%type DECIMAL: float
+%type CHARACTER: char
+%constructor $$ = 0;
+
 program: imports auxa main;
 program: imports main;
 program: auxa main;
@@ -116,7 +122,6 @@ auxd: functiondef;
 
 imports: IMPORT COLON STRING;
 
-statement: vars;
 statement: assign;
 statement: conds;
 statement: whiles;
@@ -145,12 +150,18 @@ customkey: ID;
 var: auxe;
 var: LIST auxf;
 var: MATRIX auxg;
-auxe: ID COMMA auxe;
 auxe: ID;
-auxf: ID BOX_L INTEGER BOX_R COMMA auxf;
+auxe: auxe COMMA ID;
+%prefer auxe: auxe * COMMA ID
+%over   var: auxe *
+auxf: auxf COMMA ID BOX_L INTEGER BOX_R;
 auxf: ID BOX_L INTEGER BOX_R;
-auxg: ID BOX_L INTEGER COMMA INTEGER BOX_R COMMA auxg;
+%prefer auxf: auxf * COMMA ID BOX_L INTEGER BOX_R
+%over   var: LIST auxf *
+auxg: auxg COMMA ID BOX_L INTEGER COMMA INTEGER BOX_R;
 auxg: ID BOX_L INTEGER COMMA INTEGER BOX_R;
+%prefer auxg: auxg * COMMA ID BOX_L INTEGER COMMA INTEGER BOX_R
+%over   var: MATRIX auxg *
 
 assigns: auxh auxi SMCLN;
 auxh: ID ASSIGN auxh;
@@ -165,7 +176,15 @@ conds: IF condition BRACE_L auxj BRACE_R ELSE statement;
 conds: IF condition statement ELSE statement;
 conds: IF condition BRACE_L auxj BRACE_R;
 conds: IF condition statement;
-auxj: statement auxj;
+%prefer conds: IF condition statement * ELSE statement
+%over   conds: IF condition statement *
+%prefer conds: IF condition statement * ELSE BRACE_L auxj BRACE_R
+%over   conds: IF condition statement *
+%prefer conds: IF condition BRACE_L auxj BRACE_R * ELSE statement
+%over   conds: IF condition BRACE_L auxj BRACE_R *
+%prefer conds: IF condition BRACE_L auxj BRACE_R * ELSE BRACE_L auxj BRACE_R
+%over   conds: IF condition BRACE_L auxj BRACE_R *
+auxj: auxj statement;
 auxj: statement;
 
 condition: PARNT_L auxk PARNT_R;
@@ -211,6 +230,12 @@ jumps: BREAK SMCLN;
 jumps: NEXT SMCLN;
 jumps: RETURN ID SMCLN;
 jumps: RETURN expression SMCLN;
+%prefer jumps: * BREAK SMCLN
+%over   auxj: statement *
+%prefer jumps: * RETURN ID SMCLN
+%over   auxj: statement *
+%prefer jumps: * RETURN expression SMCLN
+%over   auxj: statement *
 
 funccall: ID COLON ID PARNT_L args PARNT_R SMCLN;
 funccall: ID COLON ID PARNT_L PARNT_R SMCLN;
@@ -255,14 +280,14 @@ constant: STRING;
 constant: FALSE;
 constant: NULL;
 
-functiondef: FUNCTION type ID COLON ID PARNT_L args PARNT_R BRACE_L auxj RETURN auxi BRACE_R;
-functiondef: FUNCTION type ID COLON ID PARNT_L args PARNT_R BRACE_L RETURN auxi BRACE_R;
-functiondef: FUNCTION type PARNT_L args PARNT_R BRACE_L auxj RETURN auxi BRACE_R;
-functiondef: FUNCTION type PARNT_L args PARNT_R BRACE_L RETURN auxi BRACE_R;
+functiondef: FUNCTION type ID COLON ID PARNT_L args PARNT_R BRACE_L vars auxj RETURN auxi BRACE_R;
+functiondef: FUNCTION type ID COLON ID PARNT_L args PARNT_R BRACE_L vars RETURN auxi BRACE_R;
+functiondef: FUNCTION type PARNT_L args PARNT_R BRACE_L vars auxj RETURN auxi BRACE_R;
+functiondef: FUNCTION type PARNT_L args PARNT_R BRACE_L vars RETURN auxi BRACE_R;
 functiondef: voidfdef;
 
-voidfdef: FUNCTION VOID ID COLON ID PARNT_L args PARNT_R BRACE_L auxj BRACE_R;
-voidfdef: FUNCTION VOID ID PARNT_L args PARNT_R BRACE_L auxj BRACE_R;
+voidfdef: FUNCTION VOID ID COLON ID PARNT_L vars args PARNT_R BRACE_L auxj BRACE_R;
+voidfdef: FUNCTION VOID ID PARNT_L vars args PARNT_R BRACE_L auxj BRACE_R;
 
 customdef: CUSTOM ID PARNT_L PRIVATE COLON auxp PUBLIC COLON auxp PARNT_R SMCLN;
 customdef: CUSTOM ID PARNT_L PUBLIC COLON auxp PRIVATE COLON auxp PARNT_R SMCLN;
@@ -280,22 +305,26 @@ cnstrdef: CONSTR PARNT_L args PARNT_R BRACE_L auxj BRACE_R;
 args: type var COMMA args;
 args: type var;
 
-expression: term PLUS expression;
-expression: term NDASH expression;
-expression: term;
+expression: term; //                     { $$ = $0; }
+expression: expression PLUS term; //     { $$ = $0 + $2; }
+expression: expression NDASH term; //    { $$ = $0 - $2; }
 
-term: base ASTRK term;
-term: base SLASH term;
-term: base;
+term: base; //                           { $$ = $0; }
+term: term ASTRK base; //                { $$ = $0 * $2; }
+term: term SLASH base; //                { $$ = $0 / $2; }
 
-base: factor MODULO factor;
-base: factor CARET factor;
-base: factor;
+base: factor; //                         { $$ = $0; }
+base: factor MODULO factor; //           { $$ = $0 % $2; }
+base: factor CARET factor; //            { $$ = pow($0, $2); }
 
-factor: PARNT_L expression PARNT_R;
-factor: PLUS constant;
-factor: NDASH constant;
-factor: constant;
+factor: constant; //                     { $$ = $0; }
+factor: PLUS constant; //                { $$ = $1; }
+factor: NDASH constant; //               { $$ = -$1; }
+factor: PARNT_L expression PARNT_R; //   { $$ = $1; }
+% prefer auxi: constant *
+% over   factor: constant *
+% prefer auxn: constant *
+% over   factor: constant *
 
 logicop: AND;
 logicop: OR;
@@ -308,6 +337,8 @@ compop: ANG_R;
 compop: EQUAL;
 compop: NEQUAL;
 
+mains: MAIN BRACE_L vars auxj END BRACE_R;
+mains: MAIN BRACE_L vars END BRACE_R;
 mains: MAIN BRACE_L auxj END BRACE_R;
 mains: MAIN BRACE_L END BRACE_R;
 
