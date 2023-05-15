@@ -5,6 +5,14 @@
 
 # Function Directory
 fnDir = []
+fnOrig = 0
+fnPin = 0
+
+def fd_init():
+  global fnDir, fnOrig, fnPin
+  fnDir = [("#", "#", 0, "#", [], [])]
+  fnOrig = 0
+  fnPin = 0
 
 # Custom Types Register
 customReg = {}
