@@ -2,16 +2,11 @@
 -----------------------------------------------------------
 
 ## Avance Real:
-> 🔲 La semántica está en proceso 18/69 (26.1%).  
-> 🔲 El estatuto for está en proceso.  
-> ✅ Los estatutos if, while, do-while están definidos.  
+> 🔲 La semántica está en proceso 27/42 (53.2%).  
+> 🔲 El manejador de memoria reubica constantes enteras solamente.
+> ✅ El manejador de memoria está funcionando.  
+> ✅ Los estatutos if, while, do-while y for están definidos.  
 > ✅ La semántica básica está definida.  
 > ✅ El cubo semántico está definido.  
-> ✅ La gramática en zen/grammar.py está completa.  
+> ✅ La gramática en zen/zengrammar.py está completa y funcionando.  
 > ✅ El archivo del léxico está completo y funcionando.
-
-
-Procesos implementados= 26/42
-Parsing Test= 20/42
-Function Test= 18/42
-Total= 64/126 = 50.8%
