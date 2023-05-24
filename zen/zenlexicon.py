@@ -5,16 +5,16 @@ import re
 
 # Tokens Definition
 tokens = (
-  'AND', 'ANG_L', 'ANG_R', 'APPLY', 'AS', 'ASSIGN', 'ASTRK', 'BOOL',
+  'AND', 'ANG_L', 'ANG_R', 'APPLY', 'ASSIGN', 'ASTRK', 'BOOL',
   'BOX_L', 'BOX_R', 'BRACE_L', 'BRACE_R', 'BREAK', 'CARET', 'CASE',
   'CHAR', 'CHARACTER', 'COLON', 'COMMA', 'COMMENT', 'CONSTR', 'CREAD',
   'CUSTOM', 'CWRITE', 'DEC', 'DECIMAL', 'DEFAULT', 'DO', 'DOT', 'ELSE',
-  'END', 'EQUAL', 'FALSE', 'FOLDL', 'FOLDR', 'FOREACH', 'FROM',
-  'FUNCTION', 'ID', 'IF', 'IMPORT', 'IN', 'INT', 'INTO', 'INTEGER',
-  'LAMBDA', 'LIST', 'LOOP', 'MAIN', 'MATRIX', 'MODULO', 'NDASH',
-  'NEQUAL', 'NEXT', 'NULL', 'OR', 'PARNT_L', 'PARNT_R', 'PLUS',
-  'PRIVATE', 'PUBLIC', 'RETURN', 'SET', 'SLASH', 'SMCLN', 'STRING',
-  'SWITCH', 'TILDE', 'TRUE', 'UNTIL', 'USING', 'VOID', 'WHILE'
+  'END', 'EQUAL', 'FALSE', 'FOLDL', 'FOLDR', 'FOREACH', 'FUNCTION',
+  'ID', 'IF', 'IMPORT', 'IN', 'INT', 'INTO', 'INTEGER', 'LAMBDA',
+  'LIST', 'LOOP', 'MAIN', 'MATRIX', 'MODULO', 'NDASH', 'NEQUAL', 'NEXT',
+  'NULL', 'OR', 'PARNT_L', 'PARNT_R', 'PLUS', 'PRIVATE', 'PUBLIC',
+  'RANGE', 'RETURN', 'SET', 'SLASH', 'SMCLN', 'STRING', 'SWITCH', 'TILDE',
+  'TRUE', 'USING', 'VOID', 'WHILE'
 )
 
 # Tokens' Regex Definition
@@ -22,7 +22,6 @@ t_AND = r'&&'
 t_ANG_L = r'<'
 t_ANG_R = r'>'
 t_APPLY = r'apply'
-t_AS = r'as'
 t_ASSIGN = r'<<'
 t_ASTRK = r'\*'
 t_BOOL = r'bool'
@@ -52,7 +51,6 @@ t_FALSE = r'False'
 t_FOLDL = r'foldleft'
 t_FOLDR = r'foldright'
 t_FOREACH = r'foreach'
-t_FROM = r'from'
 t_FUNCTION = r'function'
 t_IF = r'if'
 t_IMPORT = r'import'
@@ -75,6 +73,7 @@ t_PARNT_R = r'\)'
 t_PLUS = r'\+'
 t_PRIVATE = r'private'
 t_PUBLIC = r'public'
+t_RANGE = r'range'
 t_RETURN = r'return'
 t_SET = r'set'
 t_SLASH = r'/'
@@ -82,7 +81,6 @@ t_SMCLN = r';'
 t_SWITCH = r'switch'
 t_TILDE = r'~'
 t_TRUE = r'True'
-t_UNTIL = r'until'
 t_USING = r'using'
 t_VOID = r'void'
 t_WHILE = r'while'
@@ -91,20 +89,19 @@ t_ignore = ' \t'
 
 # Reserved Words
 reswords = {
-  'and': 'AND', 'apply': 'APPLY', 'as': 'AS', 'bool': 'BOOL',
-  'break': 'BREAK', 'case': 'CASE', 'char': 'CHAR',
-  'constructor': 'CONSTR', 'cread': 'CREAD', 'custom': 'CUSTOM',
-  'cwrite': 'CWRITE', 'dec': 'DEC', 'default': 'DEFAULT',
-  'do': 'DO', 'else': 'ELSE', 'end': 'END', 'endl': 'ENDL',
-  'False': 'FALSE', 'foldleft': 'FOLDL', 'foldright': 'FOLDR',
-  'foreach': 'FOREACH', 'from': 'FROM', 'function': 'FUNCTION',
+  'and': 'AND', 'apply': 'APPLY', 'bool': 'BOOL', 'break': 'BREAK',
+  'case': 'CASE', 'char': 'CHAR', 'constructor': 'CONSTR',
+  'cread': 'CREAD', 'custom': 'CUSTOM', 'cwrite': 'CWRITE',
+  'dec': 'DEC', 'default': 'DEFAULT', 'do': 'DO', 'else': 'ELSE',
+  'end': 'END', 'endl': 'ENDL', 'False': 'FALSE', 'foldleft': 'FOLDL',
+  'foldright': 'FOLDR', 'foreach': 'FOREACH', 'function': 'FUNCTION',
   'if': 'IF', 'import': 'IMPORT', 'in': 'IN', 'int': 'INT',
   'into': 'INTO', 'lambda': 'LAMBDA', 'list': 'LIST', 'loop': 'LOOP',
-  'main': 'MAIN', 'matrix': 'MATRIX', 'next': 'NEXT',
-  'Null': 'NULL', 'private': 'PRIVATE', 'public': 'PUBLIC',
-  'return': 'RETURN', 'set': 'SET', 'switch': 'SWITCH',
-  'tab': 'TAB', 'text': 'TEXT', 'True': 'TRUE', 'until': 'UNTIL',
-  'using': 'USING', 'void': 'VOID', 'while': 'WHILE',
+  'main': 'MAIN', 'matrix': 'MATRIX', 'next': 'NEXT', 'Null': 'NULL',
+  'private': 'PRIVATE', 'public': 'PUBLIC', 'range': 'RANGE',
+  'return': 'RETURN', 'set': 'SET', 'switch': 'SWITCH', 'tab': 'TAB',
+  'text': 'TEXT', 'True': 'TRUE', 'using': 'USING', 'void': 'VOID',
+  'while': 'WHILE',
 }
 
 # Special Tokens' Regex Definition

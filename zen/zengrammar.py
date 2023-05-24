@@ -51,7 +51,7 @@ def evaluate(left_arg, right_arg, operator):
 def function_end():
   pass
 
-def update(quad_ID, element, new_value):
+def quad_update(quad_ID, element, new_value):
   temp = list(schema[quad_ID])
   temp[element] = new_value
   schema[quad_ID] = tuple(temp)
@@ -325,13 +325,13 @@ def p_n0901(p):
 
 def p_n0902(p):
   '''n0902 : '''
-  update(jump_stack[-1], 3, len(schema))
+  quad_update(jump_stack[-1], 3, len(schema))
   jump_stack.pop()
 
 def p_n0903(p):
   '''n0903 : '''
   schema.append(zs.quad("goto", None, None, None))
-  update(jump_stack[-1], 3, len(schema))
+  quad_update(jump_stack[-1], 3, len(schema))
   jump_stack.pop()
   jump_stack.append(len(schema)-1)
 
@@ -427,7 +427,7 @@ def p_whiles(p):
   jump_stack.pop()
   schema.append(zs.quad("goto", None, None, jump_stack[-1]))
   jump_stack.pop()
-  update(temp, 3, len(schema))
+  quad_update(temp, 3, len(schema))
 
 def p_n1201(p):
   '''n1201 : '''
@@ -449,7 +449,7 @@ def p_n1202(p):
 
 # Do-while statement
 def p_dowhiles(p):
-  '''dowhiles : DO n1301 BRACE_L statement auxm BRACE_R WHILE PARNT_L condition PARNT_R'''
+  '''dowhiles : DO n1301 auxl WHILE PARNT_L condition PARNT_R'''
   cond, ctype = operand_stack[-1]
   operand_stack.pop()
   if ctype != 3:
@@ -468,7 +468,7 @@ def p_n1301(p):
 
 # Loop statement
 def p_loops(p):
-  '''loops : LOOP ID n1401 FROM auxk n1402 UNTIL PARNT_L condition PARNT_R auxl'''
+  '''loops : LOOP ID n1401 IN RANGE PARNT_L auxk n1402 COLON auxk n1403 COLON condition n1404 PARNT_R auxl n1405'''
   pass
 
 def p_n1401(p):
@@ -504,19 +504,59 @@ def p_n1402(p):
   '''n1402 : '''
   begin, bgtype = operand_stack[-1]
   operand_stack.pop()
-  if bgtype != 0:
-    raise zs.ZenTypeMismatch("zen::cmp > for-statement start expected int.")
-
   iter, itype = operand_stack[-1]
-  if zs.check_compatible(bgtype, 0, itype) != -1:
+  operand_stack.pop()
+  if bgtype != 0:
+    raise zs.ZenTypeMismatch("zen::cmp > for-statement start clause expected int.")
+  if zs.check_compatible(itype, 0, bgtype) != -1:
     schema.append(zs.quad(0, begin, None, iter))
-    
+    schema.append(zs.quad("goto", None, None, None))
+    jump_stack.append(len(schema))
+    jump_stack.append(len(schema)-1)
+    operand_stack.append((iter, itype))
   else:
-    raise zs.ZenTypeMismatch(f"zen::cmp > type mismatch: can't operate {ltype} {operator} {rtype}")
+    raise zs.ZenTypeMismatch(f"zen::cmp > type mismatch: can't operate {bgtype} {0} {itype}")
+
+def p_n1403(p):
+  '''n1403 : '''
+  update, utype = operand_stack[-1]
+  operand_stack.pop()
+  iter, itype = operand_stack[-1]
+  operand_stack.pop()
+  if utype != 0:
+    raise zs.ZenTypeMismatch("zen::cmp > for-statement update clause expected int.")
+  else:
+    if zs.check_compatible(itype, 0, utype) == 0:
+      if current_function == 0: temp = mastermind[0].alloc(0, "temporal")
+      else: temp = mastermind[1].alloc(0, "temporal")
+      schema.append(zs.quad(1, update, iter, temp))
+      schema.append(zs.quad(0, temp, None, iter))
+      temp = jump_stack[-1]
+      quad_update(temp, 3, len(schema))
+      jump_stack.pop()
+    else:
+      raise zs.ZenTypeMismatch(f"zen::cmp > type mismatch: can't operate {utype} {0} {itype}")
+
+def p_n1404(p):
+  '''n1404 : '''
+  compare, ctype = operand_stack[-1]
+  operand_stack.pop()
+  if ctype != 3:
+    raise zs.ZenTypeMismatch("zen::cmp > for-statement compare clause expected boolean.")
+  else:
+    schema.append(zs.quad("goto-t", compare, None, None))
+    jump_stack.append(len(schema)-1)
+
+def p_n1405(p):
+  '''n1405 : '''
+  quad_update(jump_stack[-1], 3, len(schema)+1)
+  jump_stack.pop()
+  schema.append(zs.quad("goto", None, None, jump_stack[-1]))
+  jump_stack.pop()
 
 # Foreach statement
 def p_foreachs(p):
-  '''foreachs : FOREACH AS ID IN ID auxl'''
+  '''foreachs : FOREACH ID IN ID auxl'''
   pass
 
 # Switch statement
@@ -985,7 +1025,7 @@ def p_mains(p):
 def p_n4201(p):
   '''n4201 : '''
   global current_function
-  update(jump_stack[-1], 3, len(schema))
+  quad_update(jump_stack[-1], 3, len(schema))
   jump_stack.pop()
   function_dir.append(("main", None, len(schema), 0, None, []))
   current_function = len(function_dir) - 1
