@@ -1,0 +1,50 @@
+Progreso:
+Implementados: 26/42
+Parsing Test:  20/42
+Function Test: 18/42
+--------------------------------
+Total:        64/126 : 50.8%
+--------------------------------
+program	     1    ✓ ✓ ✓
+imports	     2    ✓
+statement	   3    ✓ ✓
+vars		     4    ✓ ✓ ✓
+type		     5    ✓ ✓ ✓
+customkey	   6    ✓
+var		       7    ✓ ✓ ✓
+assign	     8    ✓ ✓ ✓
+conds		     9    ✓ ✓ ✓
+condition	   10   ✓ ✓ ✓
+comparison	 11   ✓ ✓ ✓
+whiles	     12   ✓ ✓ ✓
+dowhiles	   13   ✓ ✓ ✓
+loops		     14   ...
+foreachs	   15
+switchs	     16
+cases		     17
+jumps		     18
+funccall	   19
+function	   20
+applys	     21
+folds		     22
+lambdacall	 23
+console	     24   ✓ ✓
+comment	     25   ✓ ✓ ✓
+constant	   26   ✓ ✓ ✓
+direction    27
+functiondef	 28   ✓
+voidfdef	   29   ✓
+customdef	   30   ...
+priv		     31
+pub		       32
+structstat	 33
+cnstrdef	   34
+args		     35   ✓
+expression	 36   ✓ ✓ ✓
+term		     37   ✓ ✓ ✓
+base		     38   ✓ ✓ ✓
+factor	     39   ✓ 
+logicop	     40   ✓ ✓ ✓
+compop	     41   ✓ ✓ ✓
+mains		     42   ✓ ✓ ✓
+--------------------------------
