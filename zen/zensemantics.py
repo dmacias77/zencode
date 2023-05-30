@@ -3,11 +3,6 @@
 
 # ---Compiling Structures-----------------------------------------
 
-# Custom Types Register
-customReg = {}
-
-# ---Static Structures
-
 # Predefined Types
 basic_types = { "int": int, "dec": float, "char": str, "bool": bool }
 
@@ -45,6 +40,9 @@ def check_compatible(left, operator, right):
 class ZenImportError(Exception):
   pass
 
+class ZenFunctionCallError(Exception):
+  pass
+
 class ZenInvalidType(Exception):
   pass
 
@@ -66,7 +64,7 @@ def import_file(filename):
   except FileNotFoundError:
     raise ZenImportError(f"zen::cmp > import error: File {filename}.zh not found.")
 
-def storef(origin: str): # next to define 21
+def storef(origin: str): # next to define 25
   if len(origin) == 1:
     if origin == '+': return 1
     elif origin == '-': return 2
@@ -86,14 +84,19 @@ def storef(origin: str): # next to define 21
   elif len(origin) == 3:
     if origin == "not": return 18
     elif origin == "and": return 20
+    elif origin == "arx": return 21
   elif len(origin) == 4:
     if origin == "goto": return 13
   elif len(origin) == 5:
     if origin == "cread": return 16
+    elif origin == "param": return 22
+    elif origin == "gosub": return 23
   elif len(origin) == 6:
     if origin == "goto-t": return 14
     elif origin == "goto-f": return 15
     elif origin == "cwrite": return 17
+    elif origin == "return": return 24
+  else: raise IOError()
 
 def quad(operation, element_1, element_2, element_3):
   q1 = q2 = q3 = -1

@@ -79,20 +79,20 @@ class MasterMind:
       top = self.next_free[type]-1
       return bottom, top
     else:
-      return resources(self)
+      return self.resources(self)
 
   def drop_func(self):
     self.func_boundary.pop()
   
-  def func_range(self, function_ID: int, type: int):
+  def func_range(self, type: int):
     if self.main:
       raise SyntaxError("zen::mind > func_range method is not available for main memory.")
     else:
       if type != -1:
-        bottom = self.func_boundary[type]
+        bottom = self.func_boundary[-1][type]
         top = self.next_free[type]
         return bottom, top
-      else: return self.func_boundary
+      else: return self.func_boundary[-1]
   
   def resources(self):
     rtable = [self.next_free[0] - SUB_BOTTOM]

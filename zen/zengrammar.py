@@ -2,9 +2,11 @@
 # ZENCODE [禅] Grammar and Semantics
 
 # To Do:
+# • Redefinir args para el llamado de funciones
+#   - Quitar la actualización de la tabla de params de 'args'
 # • Funciones pendientes en zzen.txt
 # • Revisar administración de constantes... porque los int se duplican
-# • Testing... mucho testing
+# • Renombrar auxiliares quitando las que quedaron en desuso
 import zen.ply.yacc as yacc
 
 from zen.zenlexicon import tokens, tokenizer
@@ -16,16 +18,20 @@ zenmind = {}
 mastermind = []
 
 # ---Directories--------------------------------------------------
-function_dir = []
 custom_dir = []
+function_dir = []
 
 # ---Pins---------------------------------------------------------
+calling_function = -1
 const_temporal = None
 current_custom = -1
 current_function = 0
 current_type = -1
 custom_declaration = False
-invert_result = 0
+customvarfunc = False
+funccallarg = 0
+function_def = False
+invert_result = False
 read_write = -1
 
 # ---Auxiliary Functions------------------------------------------
@@ -48,15 +54,17 @@ def evaluate(left_arg, right_arg, operator):
   elif operator == 20: return bool(left_arg and right_arg)
   else: raise IOError(f"Invalid operator: {operator}")
 
-def function_end():
-  pass
+def fd_update(fdID, element, new_value):
+  temp = list(function_dir[fdID])
+  temp[element] = new_value
+  function_dir[fdID] = tuple(temp)
 
 def quad_update(quad_ID, element, new_value):
   temp = list(schema[quad_ID])
   temp[element] = new_value
   schema[quad_ID] = tuple(temp)
 
-# ---Generate Functional Stacks-----------------------------------
+# ---Functional Stacks--------------------------------------------
 dimensional_stack = []
 jump_stack = []
 operand_stack = []
@@ -77,7 +85,7 @@ def p_n0101(p):
   '''n0101 : '''
   schema.append(zs.quad("goto",None,None,None))
   jump_stack.append(0)
-  function_dir.append(("#", None, 0, 0, [], []))
+  function_dir.append(("#", None, 0, 0, [], [], None))
   mastermind.append(MasterMind(1))
   mastermind.append(MasterMind(0))
 
@@ -114,7 +122,7 @@ def p_statement(p):
                | foreachs
                | switchs
                | jumps
-               | funccall
+               | vfunction
                | applys
                | folds
                | console'''
@@ -265,7 +273,7 @@ def p_auxk(p):
           | constant n6002
           | direction n6003
           | expression
-          | funccall'''
+          | vfunction'''
   pass
 
 def p_n6001(p):
@@ -588,24 +596,68 @@ def p_auxs(p):
 # Jump statement (next/break/return)
 def p_jumps(p):
   '''jumps : NEXT SMCLN
-           | BREAK SMCLN
-           | RETURN auxk SMCLN'''
+           | BREAK SMCLN'''
   pass
 
-# Function call as statement
-def p_funccall(p):
-  '''funccall : function SMCLN'''
-  pass
+# Void function call
+def p_vfunction(p):
+  '''vfunction : auxt ID n1901 PARNT_L args PARNT_R SMCLN'''
+  schema.append("gosub", 0, None, calling_function)
 
-# Function call as part of an expression
+def p_n1901(p):
+  '''n1901 : '''
+  if customvarfunc:
+    pass
+  else:
+    i = 0
+    for x in function_dir:
+      if p[-1] == x[0]:
+        if x[1] == -1:
+          global calling_function, funccallarg
+          calling_function = i
+          schema.append(zs.quad("arx", None, 0, p[-1]))
+          funccallarg = 0
+        else:
+          zs.ZenFunctionCallError(f"zen::cmp > function {p[-1]} is not void.")
+      else:
+        i += 1
+    else:
+      zs.ZenFunctionCallError(f"zen::cmp > function {p[-1]} is not defined.")
+
+# Function call
 def p_function(p):
-  '''function : auxt ID PARNT_L args PARNT_R'''
-  pass
+  '''function : auxt ID n2001 PARNT_L args PARNT_R'''
+  schema.append("gosub", 0, None, calling_function)
+  auxfvar = "zf#" + p[2]
+  for x in function_dir[0][5]:
+    if x[0] == auxfvar:
+      operand_stack.append((x[2], x[1]))
+
+def p_n2001(p):
+  '''n2001 : '''
+  if customvarfunc:
+    pass
+  else:
+    i = 0
+    for x in function_dir:
+      if p[-1] == x[0]:
+        if x[1] != -1:
+          global calling_function, funccallarg
+          calling_function = i
+          schema.append(zs.quad("arx", None, 0, p[-1]))
+          funccallarg = 0
+        else:
+          zs.ZenFunctionCallError(f"zen::cmp > function {p[-1]} is void and expected to return.")
+      else:
+        i += 1
+    else:
+      zs.ZenFunctionCallError(f"zen::cmp > function {p[-1]} is not defined.")
 
 def p_auxt(p):
   '''auxt : ID DOT
           | '''
-  pass
+  global customvarfunc
+  customvarfunc = True
 
 # HOF apply statement
 def p_applys(p):
@@ -723,9 +775,15 @@ def p_auxx(p):
 
 # Function definition    
 def p_functiondef(p):
-  '''functiondef : FUNCTION type ID n2801 PARNT_L args PARNT_R BRACE_L auxs RETURN auxk BRACE_R n2802
+  '''functiondef : FUNCTION type ID n2801 PARNT_L args PARNT_R BRACE_L vars auxs RETURN auxk n2802 SMCLN BRACE_R
                  | voidfdef'''
-  pass
+  global current_function, function_def
+  function_dir[current_function][5].clear()
+  fd_update(current_function, 6, mastermind[1].func_range(-1))
+  mastermind[1].drop_func()
+  schema.append(zs.quad(99, None, None, None))
+  current_function = function_dir[current_function][3]
+  function_def = False
 
 def p_n2801(p):
   '''n2801 : '''
@@ -735,20 +793,23 @@ def p_n2801(p):
       raise zs.ZenRedefinedID(f"zen::cmp > a function named {p[-1]} is already defined.")
       break
   else:
-    function_dir.append((p[-1], current_type, len(schema) + 1, current_function, [], []))
+    global function_def
+    function_def = True
+    function_dir.append((p[-1], current_type, len(schema), current_function, [], [], None))
     addr = mastermind[0].alloc(current_type, "function")
     zenmind.update({addr: 0})
     function_dir[0][5].append((f"zf#{p[-1]}", current_type, addr))
+    mastermind[1].alloc_func()
     current_function = len(function_dir) - 1
 
 def p_n2802(p):
   '''n2802 : '''
-  function_dir[current_function][5].clear()
+  schema.append(zs.quad("return", None, None, operand_stack[-1][0]))
+  operand_stack.pop()
 
 # Void function definition
 def p_voidfdef(p):
   '''voidfdef : FUNCTION VOID ID n2901 PARNT_L args PARNT_R BRACE_L vars statement auxs BRACE_R'''
-  function_dir[current_function][5].clear()
 
 def p_n2901(p):
   '''n2901 : '''
@@ -759,7 +820,10 @@ def p_n2901(p):
       raise zs.ZenRedefinedID(f"zen::cmp > a function named {p[-1]} is already defined.")
       break
   else:
-    function_dir.append((p[-1], -1, len(schema) + 1, current_function, [], []))
+    global function_def
+    function_def = True
+    function_dir.append((p[-1], -1, len(schema), current_function, [], [], None))
+    mastermind[1].alloc_func()
     current_function = len(function_dir) - 1
 
 # Custom variable type definition
@@ -787,13 +851,13 @@ def p_auxy(p):
 
 # Private section of custom variable definition
 def p_priv(p):
-  '''priv : PRIVATE COLON structstat auxz
+  '''priv : PRIVATE COLON auxz
           | '''
   pass
 
 # Public section of custom variable definition
 def p_pub(p):
-  '''pub : PUBLIC COLON structstat auxz
+  '''pub : PUBLIC COLON cnstrdef auxz
          | '''
   pass
 
@@ -805,8 +869,7 @@ def p_auxz(p):
 # Custom variable's structure statement
 def p_structstat(p):
   '''structstat : vars
-                | functiondef
-                | cnstrdef'''
+                | functiondef'''
   pass
 
 # Custom variable's constructor definition
@@ -816,17 +879,32 @@ def p_cnstrdef(p):
 
 # Arguments definition statement
 def p_args(p):
-  '''args : type var n3501 args
+  '''args : type ID n3501 auxab
           | '''
   pass
 
+def p_auxab(p):
+  '''auxab : COMMA args auxab
+           | '''
+
 def p_n3501(p):
   '''n3501 : '''
-  function_dir[current_function][4].append(current_type)
-  mm = 0 if current_function == 0 else 1
-  addr = mastermind[mm].alloc(current_type, "variable")
-  zenmind.update({addr: 0})
-  function_dir[current_function][5].append((p[-1], current_type, addr))
+  if function_def:
+    function_dir[current_function][4].append(current_type)
+    mm = 0 if current_function == 0 else 1
+    addr = mastermind[mm].alloc(current_type, "variable")
+    zenmind.update({addr: 0})
+    function_dir[current_function][5].append((p[-1], current_type, addr))
+  else:
+    global funccallarg
+    operand_stack.append((p[-1], current_type))
+    print(function_dir[calling_function], calling_function)
+    print("---\n",function_dir,"---\n")
+    if current_type == function_dir[calling_function][4][funccallarg]:
+      schema.append(zs.quad("param", None, None, funccallarg))
+      funccallarg += 1
+    else:
+      raise zs.ZenFunctionCallError(f"zen::cmp > invalid parameter on call to {function_dir[calling_function][0]}.")
 
 # Arithmetic expression
 def p_expression(p):
@@ -932,7 +1010,7 @@ def p_factor(p):
             | constant n3902
             | NDASH constant n3903
             | direction n3904
-            | funccall
+            | vfunction
             | PARNT_L expression PARNT_R'''
   pass
 
@@ -1027,7 +1105,7 @@ def p_n4201(p):
   global current_function
   quad_update(jump_stack[-1], 3, len(schema))
   jump_stack.pop()
-  function_dir.append(("main", None, len(schema), 0, None, []))
+  function_dir.append(("main", None, len(schema), 0, None, [], None))
   current_function = len(function_dir) - 1
 
 def p_n4202(p):
