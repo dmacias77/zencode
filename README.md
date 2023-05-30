@@ -2,7 +2,7 @@
 -----------------------------------------------------------
 
 ## Avance Real:
-> 🔲 La semántica está en proceso 27/42 (53.2%). 
+> 🔲 La semántica está en proceso 27/42 (53.2%).  
 > 🔲 La semántica de funciones está completa, pero tiene un error.  
 > 🔲 El manejador de memoria reubica constantes enteras solamente.  
 > ✅ El manejador de memoria está funcionando.  
