@@ -2,9 +2,10 @@
 -----------------------------------------------------------
 
 ## Avance Real:
-> 🔲 La semántica está en proceso 27/42 (53.2%).  
-> 🔲 La semántica de funciones está completa, pero tiene un error.  
-> 🔲 El manejador de memoria reubica constantes enteras solamente.  
+> 🔲 La semántica está en proceso (87%).  
+> 🔲 Definiendo datatable y sus funciones.   
+> ✅ La semántica de arreglos y matrices está completa.  
+> ✅ La semántica de funciones está completa.  
 > ✅ El manejador de memoria está funcionando.  
 > ✅ Los estatutos if, while, do-while y for están definidos.  
 > ✅ La semántica básica está definida.  
