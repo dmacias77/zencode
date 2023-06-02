@@ -9,13 +9,13 @@ basic_types = { "int": int, "dec": float, "char": str, "bool": bool }
 # Semantic Cube
 # -- Key: int : 0 | dec : 1 | char : 2 | bool : 3 | err : -1
 zenocube = [
-  # <<, +, -, *, /, ^, %,CM,LG
+  # <<, +, -, *, /, %, ^,CM,LG
   [[ 0, 0, 0, 0, 0, 0, 0, 3,-1],  # int  -  int
-   [ 0, 1, 1, 1, 1, 1,-1, 3,-1],  #         dec
+   [ 0, 1, 1, 1, 1,-1, 1, 3,-1],  #         dec
    [ 0, 0, 0,-1,-1,-1,-1,-1,-1],  #         char
    [ 0, 0, 0, 0, 0,-1,-1, 3,-1]], #         bool
-  [[ 1, 1, 1, 1, 1, 1,-1, 3,-1],  # dec  -  int
-   [ 1, 1, 1, 1, 1, 1,-1, 3,-1],  #         dec
+  [[ 1, 1, 1, 1, 1,-1, 1, 3,-1],  # dec  -  int
+   [ 1, 1, 1, 1, 1,-1, 1, 3,-1],  #         dec
    [-1,-1,-1,-1,-1,-1,-1,-1,-1],  #         char
    [ 1, 1, 1, 1, 1,-1,-1, 3,-1]], #         bool
   [[ 2, 2, 2, 0, 0,-1,-1,-1,-1],  # char -  int
@@ -49,6 +49,9 @@ class ZenInvalidType(Exception):
 class ZenRedefinedID(Exception):
   pass
 
+class ZenSegmentationFault(Exception):
+  pass
+
 class ZenTypeMismatch(Exception):
   pass
 
@@ -64,7 +67,7 @@ def import_file(filename):
   except FileNotFoundError:
     raise ZenImportError(f"zen::cmp > import error: File {filename}.zh not found.")
 
-def storef(origin: str): # next to define 25
+def storef(origin: str): # next to define 26
   if len(origin) == 1:
     if origin == '+': return 1
     elif origin == '-': return 2
@@ -91,6 +94,7 @@ def storef(origin: str): # next to define 25
     if origin == "cread": return 16
     elif origin == "param": return 22
     elif origin == "gosub": return 23
+    elif origin == "check": return 25
   elif len(origin) == 6:
     if origin == "goto-t": return 14
     elif origin == "goto-f": return 15

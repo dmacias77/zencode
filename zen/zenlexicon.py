@@ -5,23 +5,21 @@ import re
 
 # Tokens Definition
 tokens = (
-  'AND', 'ANG_L', 'ANG_R', 'APPLY', 'ASSIGN', 'ASTRK', 'BOOL',
-  'BOX_L', 'BOX_R', 'BRACE_L', 'BRACE_R', 'BREAK', 'CARET', 'CASE',
-  'CHAR', 'CHARACTER', 'COLON', 'COMMA', 'COMMENT', 'CONSTR', 'CREAD',
-  'CUSTOM', 'CWRITE', 'DEC', 'DECIMAL', 'DEFAULT', 'DO', 'DOT', 'ELSE',
-  'END', 'EQUAL', 'FALSE', 'FOLDL', 'FOLDR', 'FOREACH', 'FUNCTION',
-  'ID', 'IF', 'IMPORT', 'IN', 'INT', 'INTO', 'INTEGER', 'LAMBDA',
-  'LIST', 'LOOP', 'MAIN', 'MATRIX', 'MODULO', 'NDASH', 'NEQUAL', 'NEXT',
-  'NULL', 'OR', 'PARNT_L', 'PARNT_R', 'PLUS', 'PRIVATE', 'PUBLIC',
-  'RANGE', 'RETURN', 'SET', 'SLASH', 'SMCLN', 'STRING', 'SWITCH', 'TILDE',
-  'TRUE', 'USING', 'VOID', 'WHILE'
+  'AND', 'ANG_L', 'ANG_R', 'ASSIGN', 'ASTRK', 'BOOL',
+  'BOX_L', 'BOX_R', 'BRACE_L', 'BRACE_R', 'CARET', 'CHAR',
+  'CHARACTER', 'COLON', 'COMMA', 'CREAD', 'CWRITE', 'DATA',
+  'DEC', 'DECIMAL', 'DO', 'ELSE', 'END', 'EQUAL', 'FALSE',
+  'FUNCTION', 'ID', 'IF', 'IN', 'INT', 'INTEGER', 'LIST',
+  'LOOP', 'MAIN', 'MATRIX', 'MODULO', 'NDASH', 'NEQUAL',
+  'NULL', 'OR', 'PARNT_L', 'PARNT_R', 'PLUS', 'RANGE',
+  'RETURN', 'SET', 'SLASH', 'SMCLN', 'STRING', 'TILDE',
+  'TRUE', 'VOID', 'WHILE'
 )
 
 # Tokens' Regex Definition
 t_AND = r'&&'
 t_ANG_L = r'<'
 t_ANG_R = r'>'
-t_APPLY = r'apply'
 t_ASSIGN = r'<<'
 t_ASTRK = r'\*'
 t_BOOL = r'bool'
@@ -29,35 +27,23 @@ t_BOX_L = r'\['
 t_BOX_R = r'\]'
 t_BRACE_L = r'{'
 t_BRACE_R = r'}'
-t_BREAK = r'break'
 t_CARET = r'\^'
-t_CASE = r'case'
 t_CHAR = r'char'
 t_COLON = r':'
 t_COMMA = r','
-t_COMMENT = r'\#.*?(?=\#|$)|\#.*'
-t_CONSTR = r'constructor'
 t_CREAD = r'cread'
-t_CUSTOM = r'custom'
 t_CWRITE = r'cwrite'
+t_DATA = r'data'
 t_DEC = r'dec'
-t_DEFAULT = r'default'
 t_DO = r'do'
-t_DOT = r'\.'
 t_ELSE = r'else'
 t_END = r'end'
 t_EQUAL = r'='
 t_FALSE = r'False'
-t_FOLDL = r'foldleft'
-t_FOLDR = r'foldright'
-t_FOREACH = r'foreach'
 t_FUNCTION = r'function'
 t_IF = r'if'
-t_IMPORT = r'import'
 t_IN = r'in'
 t_INT = r'int'
-t_INTO = r'into'
-t_LAMBDA = r'lambda'
 t_LIST = r'list'
 t_LOOP = r'loop'
 t_MAIN = r'main'
@@ -65,23 +51,18 @@ t_MATRIX = r'matrix'
 t_MODULO = r'%'
 t_NDASH = r'-'
 t_NEQUAL = r'><'
-t_NEXT = r'next'
 t_NULL = r'Null'
 t_OR = r'\|\|'
 t_PARNT_L = r'\('
 t_PARNT_R = r'\)'
 t_PLUS = r'\+'
-t_PRIVATE = r'private'
-t_PUBLIC = r'public'
 t_RANGE = r'range'
 t_RETURN = r'return'
 t_SET = r'set'
 t_SLASH = r'/'
 t_SMCLN = r';'
-t_SWITCH = r'switch'
 t_TILDE = r'~'
 t_TRUE = r'True'
-t_USING = r'using'
 t_VOID = r'void'
 t_WHILE = r'while'
 
@@ -89,19 +70,15 @@ t_ignore = ' \t'
 
 # Reserved Words
 reswords = {
-  'and': 'AND', 'apply': 'APPLY', 'bool': 'BOOL', 'break': 'BREAK',
-  'case': 'CASE', 'char': 'CHAR', 'constructor': 'CONSTR',
-  'cread': 'CREAD', 'custom': 'CUSTOM', 'cwrite': 'CWRITE',
-  'dec': 'DEC', 'default': 'DEFAULT', 'do': 'DO', 'else': 'ELSE',
-  'end': 'END', 'endl': 'ENDL', 'False': 'FALSE', 'foldleft': 'FOLDL',
-  'foldright': 'FOLDR', 'foreach': 'FOREACH', 'function': 'FUNCTION',
-  'if': 'IF', 'import': 'IMPORT', 'in': 'IN', 'int': 'INT',
-  'into': 'INTO', 'lambda': 'LAMBDA', 'list': 'LIST', 'loop': 'LOOP',
-  'main': 'MAIN', 'matrix': 'MATRIX', 'next': 'NEXT', 'Null': 'NULL',
-  'private': 'PRIVATE', 'public': 'PUBLIC', 'range': 'RANGE',
-  'return': 'RETURN', 'set': 'SET', 'switch': 'SWITCH', 'tab': 'TAB',
-  'text': 'TEXT', 'True': 'TRUE', 'using': 'USING', 'void': 'VOID',
-  'while': 'WHILE',
+  'bool': 'BOOL', 'char': 'CHAR',
+  'cread': 'CREAD', 'cwrite': 'CWRITE', 'data': 'DATA',
+  'dec': 'DEC', 'do': 'DO', 'else': 'ELSE', 'end': 'END',
+  'endl': 'ENDL', 'False': 'FALSE', 'function': 'FUNCTION',
+  'if': 'IF', 'in': 'IN', 'int': 'INT',
+  'list': 'LIST', 'loop': 'LOOP', 'main': 'MAIN',
+  'matrix': 'MATRIX', 'Null': 'NULL',
+  'range': 'RANGE', 'return': 'RETURN', 'set': 'SET',
+  'True': 'TRUE', 'void': 'VOID', 'while': 'WHILE',
 }
 
 # Special Tokens' Regex Definition
@@ -141,10 +118,18 @@ def t_STRING(t):
   return t
 
 # Lex Required Functions
+def t_comment(t):
+  r'\#.*?(?=\#|$)|\#.*'
+  pass
+
 def t_error(t):
-  if t.type != t_COMMENT and not t.value[0].isspace():
+  if not t.value[0].isspace():
     print(f"zen::lex > invalid character: '{t.value[0]}'")
   t.lexer.skip(1)
+
+def t_newline(t):
+  r'\n+'
+  t.lexer.lineno += len(t.value)
 
 # ---Tokenizer----------------------------------------------------
 def tokenizer():

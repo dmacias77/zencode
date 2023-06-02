@@ -1,6 +1,6 @@
 # David Macías (1283419) & Hannia Ortega (1283410)
-# ZENCODE [禅] Memory Simulator
-MALLOCMAX = 999
+# ZENCODE [禅] Memory Allocator
+MALLOCMAX = 9999
 SUB_BOTTOM = 100000
 
 def ecapsdnim(sector: int):
@@ -31,7 +31,7 @@ class MasterMind:
       self.next_free.append(0)
     else:
       self.next_free.append(SUB_BOTTOM)
-      MALLOCMAX += 9000
+      MALLOCMAX += 90000
     self.limit.append(self.next_free[0]+MALLOCMAX) # integers : 0
     self.next_free.append(self.limit[0]+1)
     self.limit.append(self.next_free[1]+MALLOCMAX) # decimals : 1
