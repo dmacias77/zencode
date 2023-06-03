@@ -2,9 +2,7 @@
 # ZENCODE [禅] Grammar and Semantics
 
 # To Do:
-# • Datatable
 # • La máquina virtual
-# • Revisar administración de constantes... porque los int se duplican
 import zen.ply.yacc as yacc
 
 from zen.zenlexicon import tokens, tokenizer
@@ -27,17 +25,10 @@ current_type = -1
 function_def = False
 invert_result = False
 read_write = -1
+special_addr = -1
+tablecols = 0
 
 # ---Auxiliary Functions------------------------------------------
-def searchconst(mmind_index, value):
-  mm = 1 if mmind_index != 0 else 0
-  bottom, top = mastermind[mm].dir_range(8)
-  for key in range(bottom, top):
-    if zenmind[key] == value:
-      return key
-      break
-  else: return -1
-
 def evaluate(left_arg, right_arg, operator):
   if operator == 7: return bool(left_arg > right_arg)
   elif operator == 8: return bool(left_arg < right_arg)
@@ -59,6 +50,21 @@ def quad_update(quad_ID, element, new_value):
   temp[element] = new_value
   schema[quad_ID] = tuple(temp)
 
+def rewind():
+  mastermind[1].drop_func()
+
+def searchconst(mmind_index, value):
+  mm = 1 if mmind_index != 0 else 0
+  bottom, top = mastermind[mm].dir_range(8)
+  for key in range(bottom, top):
+    if zenmind[key] == value:
+      return key
+      break
+  else:
+    newk = mastermind[mm].alloc(0, "constant")
+    zenmind.update({newk: value})
+    return newk
+
 # ---Functional Stacks--------------------------------------------
 dimensional_stack = []
 jump_stack = []
@@ -75,19 +81,21 @@ schema = []
 
 # Program
 def p_program(p):
-  '''program : n0101 auxa vars auxb mains'''
+  '''program : n0101 auxa auxb mains'''
   pass
 
 def p_n0101(p):
   '''n0101 : '''
+  global special_addr
   schema.append(zs.quad("goto",None,None,None))
   jump_stack.append(0)
   function_dir.append(("#", None, 0, 0, [], [], None))
   mastermind.append(MasterMind(1))
   mastermind.append(MasterMind(0))
+  special_addr = mastermind[0].alloc(1, "variable")
 
 def p_auxa(p):
-  '''auxa : imports auxa
+  '''auxa : vars auxa
           | '''
   pass
 
@@ -100,16 +108,19 @@ def p_auxb(p):
 def p_statement(p):
   '''statement : assign
                | conds
-               | whiles
+               | console
+               | datadist
+               | dataset
                | dowhiles
                | loops
                | vfunction
-               | console'''
+               | whiles'''
   pass
 
 # Variable definition
 def p_vars(p):
   '''vars : SET type var SMCLN vars
+          | CREATE datatable SMCLN vars
           | '''
   pass
 
@@ -119,7 +130,7 @@ def p_type(p):
           | CHAR
           | DEC
           | BOOL
-          | datatable'''
+          | TEXT'''
   global current_type
   if p[1] == r'int':
     current_type = 0
@@ -129,15 +140,49 @@ def p_type(p):
     current_type = 2
   elif p[1] == r'bool':
     current_type = 3
-  else: pass
+  elif p[1] == r'text':
+    current_type = 4
 
 # Custom variable name
 def p_datatable(p):
-  '''datatable : DATA BOX_L BRACE_L ID COLON type var BRACE_R auxc BOX_R'''
+  '''datatable : DATA ID n0501 BOX_L BRACE_L type COLON STRING n0502 BRACE_R auxc BOX_R BOX_L INTEGER BOX_R'''
+  for x in function_dir[current_function][5]:
+    if x[0] == p[2]:
+      raise zs.ZenRedefinedID(f"zen::cmp > {p[2]} is already defined.")
+      break
+  else:
+    mm = 0 if current_function == 0 else 1
+    for _ in range(p[14]):
+      for i in range(tablecols):
+        addr = mastermind[mm].alloc(8, "variable")
+        zenmind.update({addr: 1})
+    function_dir[current_function][5].append((p[2], 5, (addr+1)-tablecols*p[14], [p[14], tablecols], table_dir))
+
+def p_n0501(p):
+  '''n0501 : '''
+  if function_dir[current_function][3] == 0:
+    global tablecols
+    fd_update(current_function, 3, 1)
+    tablecols = 0
+  else:
+    raise zs.ZenDataTableRedefinition("zen::cmp > data table is a single-definition class.")
+
+def p_n0502(p):
+  '''n0502 : '''
+  global tablecols
+  name = p[-1]
+  for x in table_dir:
+    if name == x[0]:
+      raise zs.ZenRedefinedID("zen::cmp > attempting to declare two columns with the same identifier in data.")
+      break
+  else:
+    table_dir.append((name, current_type))
+    tablecols += 1
 
 def p_auxc(p):
-  '''auxc : COMMA BRACE_L ID COLON type var BRACE_R auxc
+  '''auxc : COMMA BRACE_L type COLON STRING n0502 BRACE_R auxc
           | '''
+  pass
 
 # Variable naming
 def p_var(p):
@@ -280,7 +325,8 @@ def p_n0801(p):
   cond, ctype = operand_stack[-1]
   operand_stack.pop()
   if ctype != 3:
-    if ctype == 4: wrong_type = "whole data table"
+    if ctype == 5: wrong_type = "whole data table"
+    elif ctype == 4: wrong_type = "text"
     elif ctype == 2: wrong_type = "char"
     elif ctype == 1: wrong_type = "dec"
     elif ctype == 0: wrong_type = "int"
@@ -341,7 +387,6 @@ def p_n0901(p):
             operator_stack.pop()
         zenmind.update({temp: 1})
         operand_stack.append((temp, otype))
-        print("OS <- ", operand_stack[-1])
       else:
         raise zs.ZenTypeMismatch("zen::cmp > type mismatch: condition expected boolean result")
     elif operator_stack[-1] == 18:
@@ -356,7 +401,6 @@ def p_n0901(p):
         schema.append(zs.quad(operator,bit,None,temp))
         zenmind.update({temp: 1})
         operand_stack.append((temp, btype))
-        print("OS <- ", operand_stack[-1])
 
 def p_auxm(p):
   '''auxm : TILDE
@@ -382,7 +426,6 @@ def p_comparison(p):
     schema.append(zs.quad(operator,left,right,temp))
     zenmind.update({temp: 1})
     operand_stack.append((temp, otype))
-    print("OS <- ", operand_stack[-1])
   else:
     raise zs.ZenTypeMismatch("zen::cmp > type mismatch: condition expected boolean result")
 
@@ -404,7 +447,8 @@ def p_n1102(p):
   cond, ctype = operand_stack[-1]
   operand_stack.pop()
   if ctype != 3:
-    if ctype == 4: wrong_type = "whole data table"
+    if ctype == 5: wrong_type = "whole data table"
+    elif ctype == 4: wrong_type = "text"
     elif ctype == 2: wrong_type = "char"
     elif ctype == 1: wrong_type = "dec"
     elif ctype == 0: wrong_type = "int"
@@ -419,7 +463,8 @@ def p_dowhiles(p):
   cond, ctype = operand_stack[-1]
   operand_stack.pop()
   if ctype != 3:
-    if ctype == 4: wrong_type = "whole data table"
+    if ctype == 5: wrong_type = "whole data table"
+    elif ctype == 4: wrong_type = "text"
     elif ctype == 2: wrong_type = "char"
     elif ctype == 1: wrong_type = "dec"
     elif ctype == 0: wrong_type = "int"
@@ -444,9 +489,9 @@ def p_n1301(p):
       if x[0] == p[-1]:
         if x[1] == 0: 
           operand_stack.append((x[2], x[1]))
-          print("OS <- ", operand_stack[-1])
         else:
-          if x[1] == 4: wrong_type = "whole data table"
+          if x[1] == 5: wrong_type = "whole data table"
+          elif x[1] == 4: wrong_type = "text"
           elif x[1] == 3: wrong_type = "bool"
           elif x[1] == 2: wrong_type = "char"
           elif x[1] == 1: wrong_type = "dec"
@@ -457,9 +502,9 @@ def p_n1301(p):
       if x[0] == p[-1]:
         if x[1] == 0: 
           operand_stack.append((x[2], x[1]))
-          print("OS <- ", operand_stack[-1])
         else:
-          if x[1] == 4: wrong_type = "whole data table"
+          if x[1] == 5: wrong_type = "whole data table"
+          elif x[1] == 4: wrong_type = "text"
           elif x[1] == 3: wrong_type = "bool"
           elif x[1] == 2: wrong_type = "char"
           elif x[1] == 1: wrong_type = "dec"
@@ -482,7 +527,6 @@ def p_n1302(p):
     jump_stack.append(len(schema))
     jump_stack.append(len(schema)-1)
     operand_stack.append((iter, itype))
-    print("OS <- ", operand_stack[-1])
   else:
     raise zs.ZenTypeMismatch(f"zen::cmp > type mismatch: can't operate {bgtype} {0} {itype}")
 
@@ -559,7 +603,6 @@ def p_constant(p):
   elif p[1] == "True" or p[1] == "False": this_type = 3
   else: this_type = -1
   const_temporal = (p[1], this_type)
-  print("new: ", const_temporal)
 
 # Function definition    
 def p_functiondef(p):
@@ -572,6 +615,7 @@ def p_functiondef(p):
   schema.append(zs.quad(99, None, None, None))
   current_function = function_dir[current_function][3]
   function_def = False
+  rewind()
 
 def p_n1701(p):
   '''n1701 : '''
@@ -636,7 +680,6 @@ def p_function(p):
     if x[0] == auxfvar:
       auxfvar = (x[2], x[1])
       operand_stack.append((x[2], x[1]))
-      print("OS <- ", operand_stack[-1])
       break
   if len(operator_stack) > 0:
     if operator_stack[-1] != 0:
@@ -778,7 +821,6 @@ def p_direction(p):
               zenmind.update({addr: x[2]})
               schema.append(zs.quad(1, index, addr, temp))
               operand_stack.append(("&"+str(temp), x[1]))
-              print("OS <- ", operand_stack[-1])
               break
             else: raise zs.ZenTypeMismatch("zen::cmp > cannot use non-integer index for list.")
           else: raise zs.ZenTypeMismatch(f"zen::cmp > {x[0]} is not a list.")
@@ -799,7 +841,6 @@ def p_direction(p):
                   zenmind.update({addr: x[2]})
                   schema.append(zs.quad(1, index, addr, temp))
                   operand_stack.append(("&"+str(temp), x[1]))
-                  print("OS <- ", operand_stack[-1])
                   break
                 else: raise zs.ZenTypeMismatch("zen::cmp > cannot use non-integer index for list.")
               else: raise zs.ZenTypeMismatch(f"zen::cmp > {x[0]} is not a list.")
@@ -830,7 +871,6 @@ def p_direction(p):
               zenmind.update({addr: x[2]})
               schema.append(zs.quad(1, temp2, addr, temp))
               operand_stack.append(("&"+str(temp), x[1]))
-              print("OS <- ", operand_stack[-1])
               break
             else: raise zs.ZenTypeMismatch("zen::cmp > cannot use non-integer index for list.")
           else: raise zs.ZenTypeMismatch(f"zen::cmp > {x[0]} is not a matrix.")
@@ -860,7 +900,6 @@ def p_direction(p):
                   zenmind.update({addr: x[2]})
                   schema.append(zs.quad(1, temp2, addr, temp))
                   operand_stack.append(("&"+str(temp), x[1]))
-                  print("OS <- ", operand_stack[-1])
                   break
                 else: raise zs.ZenTypeMismatch("zen::cmp > cannot use non-integer index for list.")
               else: raise zs.ZenTypeMismatch(f"zen::cmp > {x[0]} is not a matrix.")
@@ -897,7 +936,6 @@ def p_n2401(p):
         schema.append(zs.quad(operator,left,right,temp))
         zenmind.update({temp: 1})
         operand_stack.append((temp, otype))
-        print("OS <- ", operand_stack[-1])
       else:
         raise zs.ZenTypeMismatch(f"zen::cmp > type mismatch: can't operate {ltype} {operator} {rtype}")
       
@@ -925,7 +963,6 @@ def p_n2501(p):
       operator_stack.pop()
   
       otype = zs.check_compatible(ltype, operator, rtype)
-      print(otype)
       if otype != -1:
         if current_function != 0:
           temp = mastermind[1].alloc(otype, "temporal")
@@ -934,7 +971,6 @@ def p_n2501(p):
         schema.append(zs.quad(operator,left,right,temp))
         zenmind.update({temp: 1})
         operand_stack.append((temp, otype))
-        print("OS <- ", operand_stack[-1])
       else:
         raise zs.ZenTypeMismatch(f"zen::cmp > type mismatch: can't operate {ltype} {operator} {rtype}")
         
@@ -961,7 +997,6 @@ def p_base(p):
       mm = 0 if current_function == 0 else 1
       temp = mastermind[mm].alloc(current_type, "temporal")
       operand_stack.append((temp, current_type))
-      print("OS <- ", operand_stack[-1])
       zenmind.update({temp: 1})
       schema.append(zs.quad(op, base, relation, temp))
     else:
@@ -974,6 +1009,7 @@ def p_factor(p):
             | NDASH constant n2703
             | direction
             | function
+            | datacalc
             | PARNT_L expression PARNT_R'''
   pass
 
@@ -982,14 +1018,12 @@ def p_n2701(p):
   for x in function_dir[current_function][5]:
     if p[-1] == x[0]:
       operand_stack.append((x[2], x[1]))
-      print("OS <- ", operand_stack[-1])
       break
   else:
     if current_function != 0:
       for x in function_dir[0][5]:
         if p[-1] == x[0]:
           operand_stack.append((x[2], x[1]))
-          print("OS <- ", operand_stack[-1])
         break
       else:
         raise zs.ZenUndefinedID(f"zen::cmp > '{p[-1]}' is never defined.")
@@ -1004,13 +1038,11 @@ def p_n2702(p):
   addr = searchconst(current_function, const)
   if addr != -1:
     operand_stack.append((addr, ctype))
-    print("OS <- ", operand_stack[-1])
   else:
     mm = 0 if current_function == 0 else 1
     addr = mastermind[mm].alloc(ctype, "constant")
     zenmind.update({addr: const})
     operand_stack.append((addr, ctype))
-    print("OS <- ", operand_stack[-1])
 
 def p_n2703(p):
   '''n2703 : '''
@@ -1021,13 +1053,11 @@ def p_n2703(p):
   addr = searchconst(current_function, const)
   if addr != -1:
     operand_stack.append((addr, ctype))
-    print("OS <- ", operand_stack[-1])
   else:
     mm = 0 if current_function == 0 else 1
     addr = mastermind[mm].alloc(ctype, "constant")
     zenmind.update({addr: const})
     operand_stack.append((addr, ctype))
-    print("OS <- ", operand_stack[-1])
 
 # Logical operator appearance
 def p_logicop(p):
@@ -1060,6 +1090,269 @@ def p_n2902(p):
     operator_stack.append(11)
   else: operator_stack.append(7)
 
+# Datatable Row Definition
+def p_dataset(p):
+  '''dataset : WRITE IN ID BOX_L INTEGER BOX_R VALUES n3001 PARNT_L auxr auxs PARNT_R SMCLN'''
+  for x in function_dir[current_function][5]:
+    if p[3] == x[0]:
+      if x[1] == 5:
+        schema.append(zs.quad("chkrow", p[5], 0, x[3][0]))
+        schema.append(zs.quad("chklen", tablecols, -1, x[3][1]))
+        addr = []
+        for i in range(tablecols):
+          addr.append(operand_stack[-1])
+          operand_stack.pop()
+        mm = 0 if current_function == 0 else 1
+        point = searchconst(mm, x[2]+p[5]*x[3][1])
+        plus = searchconst(mm, 1)
+        while addr:
+          if addr[-1][0] != "pass":
+            schema.append(zs.quad(0, addr[-1][0], None, point))
+            addr.pop()
+            next = searchconst(mm, zenmind[point]+1)
+            if len(addr) > 0:
+              schema.append(zs.quad(1, point, plus, next))
+              point = next
+          else:
+            addr.pop()
+      else:
+        raise zs.ZenInvalidType(f"zen::cmp > variable {x[0]} is not a data table.")
+  else:
+    if current_function != 0:
+      for x in function_dir[0][5]:
+        if p[3] == x[0]:
+          if x[1] == 5:
+            schema.append(zs.quad("chkrow", p[5], 0, x[3][0]))
+            schema.append(zs.quad("chklen", tablecols, -1, x[3][1]))
+            addr = []
+            for i in range(tablecols):
+              addr.append(operand_stack[-1])
+              operand_stack.pop()
+            point = searchconst(0, x[2]+p[5]*x[3][1])
+            plus = searchconst(0, 1)
+            while addr:
+              if addr[-1][0] != "pass":
+                schema.append(zs.quad(0, addr[-1][0], None, point))
+                addr.pop()
+                next = searchconst(0, zenmind[point]+1)
+                if len(addr) > 0:
+                  schema.append(zs.quad(1, point, plus, next))
+                  point = next
+              else:
+                addr.pop()
+          else:
+            raise zs.ZenInvalidType(f"zen::cmp > variable {p[3]} is not a data table.")
+    else: 
+      raise zs.ZenUndefinedID(f"zen::cmp > variable {p[3]} is not defined.")
+        
+def p_n3001(p):
+  '''n3001 : '''
+  global tablecols
+  tablecols = 0
+
+def p_auxr(p):
+  '''auxr : expression
+          | PASS'''
+  global tablecols
+  tablecols += 1
+  if p[1] == r'pass':
+    operand_stack.append(("pass",-1))
+
+def p_auxs(p):
+  '''auxs : COMMA auxr auxs
+          | '''
+
+def p_datacalc(p):
+  '''datacalc : MAX PARNT_L ID COLON STRING PARNT_R
+              | MIN PARNT_L ID COLON STRING PARNT_R
+              | SUM PARNT_L ID COLON STRING PARNT_R
+              | MEAN PARNT_L ID COLON STRING PARNT_R
+              | VAR PARNT_L ID COLON STRING PARNT_R
+              | SD PARNT_L ID COLON STRING PARNT_R
+              | CORR PARNT_L ID COLON STRING COMMA STRING PARNT_R'''
+  mm = 0 if current_function == 0 else 1
+  temp = mastermind[mm].alloc(1, "temporal")
+  for x in function_dir[current_function][5]:
+    if p[3] == x[0]:
+      if x[1] == 5:
+        i = 0
+        for y in x[4]:
+          if str(p[5]) == y[0]:  
+            if y[1] == 0 or y[1] == 1:
+              if p[1] == r'MAX':
+                schema.append(zs.quad("max", None, x[2], i))
+                schema.append(zs.quad(0, special_addr, None, temp))
+                operand_stack.append((temp, 1))
+                return
+              elif p[1] == r'MIN':
+                schema.append(zs.quad("min", None, x[2], i))
+                schema.append(zs.quad(0, special_addr, None, temp))
+                operand_stack.append((temp, 1))
+                return
+              elif p[1] == r'SUM':
+                schema.append(zs.quad("sum", None, x[2], i))
+                schema.append(zs.quad(0, special_addr, None, temp))
+                operand_stack.append((temp, 1))
+                return
+              elif p[1] == r'MEAN':
+                schema.append(zs.quad("mean", None, x[2], i))
+                schema.append(zs.quad(0, special_addr, None, temp))
+                operand_stack.append((temp, 1))
+                return
+              elif p[1] == r'VAR':
+                schema.append(zs.quad("var", None, x[2], i))
+                schema.append(zs.quad(0, special_addr, None, temp))
+                operand_stack.append((temp, 1))
+                return
+              elif p[1] == r'SDEV':
+                schema.append(zs.quad("sdev", None, x[2], i))
+                schema.append(zs.quad(0, special_addr, None, temp))
+                operand_stack.append((temp, 1))
+                return
+              elif p[1] == r'CORR':
+                j = 0
+                for z in x[4]:
+                  if str(p[7]) == z[0]:
+                    if z[1] == 0 or z[1] == 1:
+                      schema.append(zs.quad("corr", x[2], i, j))
+                      schema.append(zs.quad(0, special_addr, None, temp))
+                      operand_stack.append((temp, 1))
+                      return
+                    else: raise zs.ZenTypeMismatch(f"zen::cmp > column {p[7]} is not numerical.")
+                  j += 1
+                else: raise zs.ZenTypeMismatch(f"zen::cmp > data table has no column {p[7]}.")
+            else: raise zs.ZenTypeMismatch(f"zen::cmp > column {p[5]} is not numerical.")
+          i += 1
+        else: raise zs.ZenUndefinedID(f"zen::cmp > data table has no column {p[5]}.")
+      else: raise zs.ZenInvalidType(f"zen::cmp > variable {p[3]} is not a data table.")
+  else: 
+    if current_function != 0:
+      for x in function_dir[0][5]:
+        if p[3] == x[0]:
+          if x[1] == 5:
+            i = 0
+            for y in x[4]:
+              if p[5] == y[0]:  
+                if y[1] == 0:
+                  if p[1] == r'MAX':
+                    schema.append(zs.quad("max", None, x[2], i))
+                    schema.append(zs.quad(0, special_addr, None, temp))
+                    operand_stack.append((temp, 1))
+                    return
+                  elif p[1] == r'MIN':
+                    schema.append(zs.quad("min", None, x[2], i))
+                    schema.append(zs.quad(0, special_addr, None, temp))
+                    operand_stack.append((temp, 1))
+                    return
+                  elif p[1] == r'SUM':
+                    schema.append(zs.quad("sum", None, x[2], i))
+                    schema.append(zs.quad(0, special_addr, None, temp))
+                    operand_stack.append((temp, 1))
+                    return
+                  elif p[1] == r'MEAN':
+                    schema.append(zs.quad("mean", None, x[2], i))
+                    schema.append(zs.quad(0, special_addr, None, temp))
+                    operand_stack.append((temp, 1))
+                    return
+                  elif p[1] == r'VAR':
+                    schema.append(zs.quad("var", None, x[2], i))
+                    schema.append(zs.quad(0, special_addr, None, temp))
+                    operand_stack.append((temp, 1))
+                    return
+                  elif p[1] == r'SDEV':
+                    schema.append(zs.quad("sdev", None, x[2], i))
+                    schema.append(zs.quad(0, special_addr, None, temp))
+                    operand_stack.append((temp, 1))
+                    return
+                  elif p[1] == r'CORR':
+                    j = 0
+                    for z in x[4]:
+                      if p[7] == z[0]:
+                        if z[1] == 0:
+                          schema.append(zs.quad("corr", 0, i, j))
+                          schema.append(zs.quad(0, special_addr, None, temp))
+                          operand_stack.append((temp, 1))
+                          return
+                        else: raise zs.ZenTypeMismatch(f"zen::cmp > column {p[7]} is not int.")
+                      j += 1
+                    else: raise zs.ZenTypeMismatch(f"zen::cmp > data table has no column {p[7]}.")
+                else: raise zs.ZenTypeMismatch(f"zen::cmp > column {p[5]} is not int.")
+              i += 1
+            else: raise zs.ZenUndefinedID(f"zen::cmp > data table has no column {p[5]}.")
+          else: raise zs.ZenInvalidType(f"zen::cmp > variable {p[3]} is not a data table.")
+      else: raise zs.ZenUndefinedID(f"zen::cmp > variable {p[3]} is not defined.")
+    else: raise zs.ZenUndefinedID(f"zen::cmp > variable {p[3]} is not defined.")
+
+def p_datadist(p):
+  '''datadist : NDIST FIT ID COLON STRING WITH PARNT_L expression COMMA expression PARNT_R SMCLN
+              | BINOMIAL FIT ID COLON STRING WITH PARNT_L expression COMMA expression PARNT_R SMCLN'''
+  for x in function_dir[current_function][5]:
+    if p[3] == x[0]:
+      if x[1] == 5:
+        i = 0
+        for y in x[4]:
+          if str(p[5]) == y[0]:  
+            if y[1] == 0 or y[1] == 1:
+              if p[1] == r'ndist':
+                stdev, sdtype = operand_stack[-1]
+                operand_stack.pop()
+                mean, mtype = operand_stack[-1]
+                operand_stack.pop()
+                if (mtype == 0 or mtype == 1) and (sdtype == 0 or sdtype == 1):
+                  schema.append(zs.quad("prepare", mean, stdev, "ndist"))
+                  schema.append(zs.quad("ndist", None, x[2], i))
+                  return
+                else: raise zs.ZenInvalidType("zen::cmp > call to normal distribution fitting requires numerical attributes.")
+              elif p[1] == r'binomial':
+                prob, ptype = operand_stack[-1]
+                operand_stack.pop()
+                tests, ttype = operand_stack[-1]
+                operand_stack.pop()
+                if (ttype == 0) and (ptype == 1):
+                  schema.append(zs.quad("prepare", tests, prob, "binom"))
+                  schema.append(zs.quad("binom", None, x[2], i))
+                  return
+                else: raise zs.ZenInvalidType("zen::cmp > call to binomial distribution fitting requires numerical attributes.")
+            else: raise zs.ZenTypeMismatch(f"zen::cmp > column {p[5]} is not numerical.")
+          i += 1
+        else: raise zs.ZenUndefinedID(f"zen::cmp > data table has no column {p[5]}.")
+      else: raise zs.ZenInvalidType(f"zen::cmp > variable {p[3]} is not a data table.")
+  else:
+    if current_function != 0:
+      for x in function_dir[current_function][5]:
+        if p[3] == x[0]:
+          if x[1] == 5:
+            i = 0
+            for y in x[4]:
+              if str(p[5]) == y[0]:
+                if y[1] == 0 or y[1] == 1:
+                  if p[1] == r'ndist':
+                    stdev, sdtype = operand_stack[-1]
+                    operand_stack.pop()
+                    mean, mtype = operand_stack[-1]
+                    operand_stack.pop()
+                    if (mtype == 0 or mtype == 1) and (sdtype == 0 or sdtype == 1):
+                      schema.append(zs.quad("prepare", mean, stdev, "ndist"))
+                      schema.append(zs.quad("ndist", None, x[2], i))
+                      return
+                    else: raise zs.ZenInvalidType("zen::cmp > call to normal distribution fitting requires numerical attributes.")
+                  elif p[1] == r'binomial':
+                    prob, ptype = operand_stack[-1]
+                    operand_stack.pop()
+                    tests, ttype = operand_stack[-1]
+                    operand_stack.pop()
+                    if (ttype == 0) and (ptype == 1):
+                      schema.append(zs.quad("prepare", tests, prob, "binom"))
+                      schema.append(zs.quad("binom", None, x[2], i))
+                      return
+                    else: raise zs.ZenInvalidType("zen::cmp > call to binomial distribution fitting requires numerical attributes.")
+                else: raise zs.ZenTypeMismatch(f"zen::cmp > column {p[5]} is not numerical.")
+              i += 1
+            else: raise zs.ZenUndefinedID(f"zen::cmp > data table has no column {p[5]}.")
+          else: raise zs.ZenInvalidType(f"zen::cmp > variable {p[3]} is not a data table.")
+      else: raise zs.ZenUndefinedID(f"zen::cmp > variable {p[3]} is not defined.")
+    else: raise zs.ZenUndefinedID(f"zen::cmp > variable {p[3]} is not defined.")
+      
 # Main section
 def p_mains(p):
   '''mains : MAIN BRACE_L n0001 vars statement auxl END n0002 BRACE_R'''
@@ -1095,14 +1388,6 @@ def p_error(p):
   if p:
     if p.type != 'COMMENT':
       print(f"zen::grm > syntax error at token {p.type} ({p.value}) at line {p.lineno} : {p.lexpos}\n")
-      for x in function_dir:
-        print(x)
-      print("\nJS: ", jump_stack)
-      print("DS: ", dimensional_stack)
-      print("OTS:", operand_stack)
-      print("OS: ", operator_stack, "\n")
-      for x in schema:
-        print(x)
   else:
     print("zen::grm > syntax error: unexpected end of input")
   

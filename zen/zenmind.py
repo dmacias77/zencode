@@ -4,18 +4,18 @@ MALLOCMAX = 9999
 SUB_BOTTOM = 100000
 
 def ecapsdnim(sector: int):
-  slist = ["int", "dec", "char", "bool", "t.int", "t.dec", "t.char", "t.bool", "const", "ptr"]
+  slist = ["int", "dec", "char", "bool", "t.int", "t.dec", "t.char", "t.bool", "data", "const"]
   return slist[sector]
 
 def mindspace(type: str, kind):
-  if kind == "constant": return 8
-  elif kind == "pointer": return 9
+  if kind == "constant": return 9
   else:
     x = -1
     if type == "int": x = 0
     elif type == "dec": x = 1
     elif type == "char": x = 2
     elif type == "bool": x = 3
+    elif type == "data": x = 8
     if kind == "temporal": x += 4
     return x
 
@@ -48,9 +48,9 @@ class MasterMind:
     self.next_free.append(self.limit[6]+1)
     self.limit.append(self.next_free[7]+MALLOCMAX) # temp_bool: 7
     self.next_free.append(self.limit[7]+1)
-    self.limit.append(self.next_free[8]+(MALLOCMAX * 2 + 1)) # constants:8
+    self.limit.append(self.next_free[8]+(MALLOCMAX * 2 + 1)) # datatable: 8
     self.next_free.append(self.limit[8]+1)
-    self.limit.append(self.next_free[9]+MALLOCMAX) # pointers : 9
+    self.limit.append(self.next_free[9]+(MALLOCMAX * 2 + 1)) # constants: 9
 
   def alloc(self, type, kind):
     if isinstance(type, str):

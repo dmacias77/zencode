@@ -30,6 +30,8 @@ zenocube = [
 
 def check_compatible(left, operator, right):
   comp = -1
+  if left > 3 or right > 3: return comp
+    
   if operator in range(0,7): comp = zenocube[left][right][operator]
   elif operator in range(7,13): comp = zenocube[left][right][7]
   elif operator in range(19,21): comp = zenocube[left][right][8]
@@ -37,7 +39,7 @@ def check_compatible(left, operator, right):
   return comp
 
 # ---Error Classes------------------------------------------------
-class ZenImportError(Exception):
+class ZenDataTableRedefinition(Exception):
   pass
 
 class ZenFunctionCallError(Exception):
@@ -59,15 +61,7 @@ class ZenUndefinedID(Exception):
   pass
 
 # ---Auxiliary Functions------------------------------------------
-def import_file(filename):
-  try:
-    with open(filename + '.zh', 'r') as file:
-      header = file.read()
-      exec(header, globals())
-  except FileNotFoundError:
-    raise ZenImportError(f"zen::cmp > import error: File {filename}.zh not found.")
-
-def storef(origin: str): # next to define 26
+def storef(origin: str): # next to define: 38
   if len(origin) == 1:
     if origin == '+': return 1
     elif origin == '-': return 2
@@ -88,18 +82,31 @@ def storef(origin: str): # next to define 26
     if origin == "not": return 18
     elif origin == "and": return 20
     elif origin == "arx": return 21
+    elif origin == "max": return 28
+    elif origin == "min": return 29
+    elif origin == "sum": return 30
+    elif origin == "var": return 32
   elif len(origin) == 4:
     if origin == "goto": return 13
+    elif origin == "mean": return 31
+    elif origin == "sdev": return 33
+    elif origin == "corr": return 34
   elif len(origin) == 5:
     if origin == "cread": return 16
     elif origin == "param": return 22
     elif origin == "gosub": return 23
     elif origin == "check": return 25
+    elif origin == "ndist": return 36
+    elif origin == "binom": return 37
   elif len(origin) == 6:
     if origin == "goto-t": return 14
     elif origin == "goto-f": return 15
     elif origin == "cwrite": return 17
     elif origin == "return": return 24
+    elif origin == "chkrow": return 26
+    elif origin == "chklen": return 27
+  elif len(origin) == 7:
+    if origin == "prepare": return 35
   else: raise IOError()
 
 def quad(operation, element_1, element_2, element_3):
