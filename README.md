@@ -2,8 +2,9 @@
 -----------------------------------------------------------
 
 ## Avance Real:
-> 🔲 La semántica está en proceso (87%).  
-> 🔲 Definiendo datatable y sus funciones.   
+> 🔲 Máquina Virtual en Proceso.  
+> ✅ La semántica está completa.  
+> ✅ Datatable y sus funciones están definidos.  
 > ✅ La semántica de arreglos y matrices está completa.  
 > ✅ La semántica de funciones está completa.  
 > ✅ El manejador de memoria está funcionando.  
