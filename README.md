@@ -2,7 +2,7 @@
 -----------------------------------------------------------
 
 ## Avance Real:
-> 🔲 Máquina Virtual en Proceso.  
+> 🔲 Máquina Virtual en Proceso con Error de Acomodo.  
 > ✅ La semántica está completa.  
 > ✅ Datatable y sus funciones están definidos.  
 > ✅ La semántica de arreglos y matrices está completa.  
