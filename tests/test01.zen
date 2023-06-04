@@ -1,0 +1,17 @@
+# ZenCode Test 01: #
+# Assignation and Console Interaction #
+main {
+  set int a, b, c;
+  set dec d, e, f;
+
+  a << 2;
+  b << 3;
+  c << 5;
+  d << 8.4;
+  e << 2.3;
+  f << 5.2;
+
+  
+
+  end
+}

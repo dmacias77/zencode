@@ -51,6 +51,9 @@ class ZenInvalidType(Exception):
 class ZenRedefinedID(Exception):
   pass
 
+class ZenRuntimeError(Exception):
+  pass
+
 class ZenSegmentationFault(Exception):
   pass
 
@@ -61,7 +64,7 @@ class ZenUndefinedID(Exception):
   pass
 
 # ---Auxiliary Functions------------------------------------------
-def storef(origin: str): # next to define: 38
+def storef(origin: str):
   if len(origin) == 1:
     if origin == '+': return 1
     elif origin == '-': return 2

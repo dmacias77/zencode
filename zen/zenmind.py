@@ -101,8 +101,8 @@ class MasterMind:
     return rtable
   
   def typeof(self, addr):
-    for i in range(0, 9):
+    for i in range(9):
       if addr < self.limit[i]:
         return ecapsdnim(i)
     else:
-      raise OverflowError()
+      return None

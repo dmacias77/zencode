@@ -1,6 +1,6 @@
 # David Macías (1283419) & Hannia Ortega (1283410)
 # ZENCODE [禅]
-from zen.zengrammar import parser
+from zen.zenmaster import parser
 
 def zazen(file, verbose=False, specs_file=None):
   outfile = None
@@ -17,4 +17,4 @@ def zazen(file, verbose=False, specs_file=None):
 
   zen_program = open(file, "r")
   
-  parser.parse(zen_program.read(), debug=1)
+  parser.parse(zen_program.read(), debug=0)
