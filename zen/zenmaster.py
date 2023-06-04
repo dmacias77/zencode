@@ -5,14 +5,15 @@ import zen.ply.yacc as yacc
 
 from zen.zenhashi import meditate
 from zen.zenlexicon import tokens, tokenizer
-from zen.zenmind import MasterMind
+from zen.zenmind import Koan
 import zen.zensemantics as zs
 
 # ---ZenMind (Memory Allocators)-------------------------------------
 zenmind = {}
-mastermind = []
+koan = Koan()
 
 # ---Directories-----------------------------------------------------
+const_list = []
 function_dir = []
 table_dir = []
 
@@ -24,10 +25,15 @@ current_type = -1
 function_def = False
 invert_result = False
 read_write = -1
-special_addr = -1
 tablecols = 0
 
 # ---Auxiliary Functions---------------------------------------------
+def adapt_function_dir():
+  light_fd = []
+  for x in range(len(function_dir)):
+    light_fd.append((function_dir[x][1], koan.resources(x)))
+  return light_fd
+
 def fd_update(fdID, element, new_value):
   temp = list(function_dir[fdID])
   temp[element] = new_value
@@ -38,22 +44,15 @@ def quad_update(quad_ID, element, new_value):
   temp[element] = new_value
   schema[quad_ID] = tuple(temp)
 
-def rewind():
-  mastermind[1].drop_func()
-
-def searchconst(mmind_index, value):
-  mm = 1 if mmind_index != 0 else 0
-  bottom, top = mastermind[mm].dir_range(8)
-  for key in range(bottom, top):
-    if zenmind[key] == value:
-      return key
-      break
+def searchconst(value):
+  if value in const_list:
+    return const_list.index(value) + 1500001
   else:
-    newk = mastermind[mm].alloc(0, "constant")
-    zenmind.update({newk: value})
-    return newk
+    const_list.append(value)
+    addr = koan.constant(value)
+    return addr
 
-# ---Functional Stacks--------------------------------------------
+# ---Functional Stacks-----------------------------------------------
 dimensional_stack = []
 jump_stack = []
 operand_stack = []
@@ -74,13 +73,9 @@ def p_program(p):
 
 def p_n0101(p):
   '''n0101 : '''
-  global special_addr
   schema.append(zs.quad("goto",None,None,None))
   jump_stack.append(0)
   function_dir.append(("#", None, 0, 0, [], [], None))
-  mastermind.append(MasterMind(1))
-  mastermind.append(MasterMind(0))
-  special_addr = mastermind[0].alloc(1, "variable")
 
 def p_auxa(p):
   '''auxa : vars auxa
@@ -139,12 +134,12 @@ def p_datatable(p):
       raise zs.ZenRedefinedID(f"zen::cmp > {p[2]} is already defined.")
       break
   else:
-    mm = 0 if current_function == 0 else 1
+    first = 0
     for _ in range(p[14]):
-      for i in range(tablecols):
-        addr = mastermind[mm].alloc(8, "variable")
-        zenmind.update({addr: 1})
-    function_dir[current_function][5].append((p[2], 5, (addr+1)-tablecols*p[14], [p[14], tablecols], table_dir))
+      for _ in range(tablecols):
+        addr = koan.meimei(current_function, 8, "variable")
+        if first == 0: first = addr
+    function_dir[current_function][5].append((p[2], 5, first, [p[14], tablecols], table_dir))
 
 def p_n0501(p):
   '''n0501 : '''
@@ -186,9 +181,7 @@ def p_auxd(p):
       raise zs.ZenRedefinedID(f"zen::cmp > {p[1]} is already defined.")
       break
   else:
-    mm = 0 if current_function == 0 else 1
-    addr = mastermind[mm].alloc(current_type, "variable")
-    zenmind.update({addr: 1})
+    addr = koan.meimei(current_function, current_type, "variable")
     function_dir[current_function][5].append((p[1], current_type, addr))
 
 def p_auxe(p):
@@ -200,9 +193,7 @@ def p_auxe(p):
         raise zs.ZenRedefinedVariable(f"zen::cmp > {p[2]} is already defined.")
         break
     else:
-      mm = 0 if current_function == 0 else 1
-      addr = mastermind[mm].alloc(current_type, "variable")
-      zenmind.update({addr: 1})
+      addr = koan.meimei(current_function, current_type, "variable")
       function_dir[current_function][5].append((p[2], current_type, addr))
 
 def p_auxf(p):
@@ -212,11 +203,11 @@ def p_auxf(p):
       raise zs.ZenRedefinedID(f"zen::cmp > {p[2]} is already defined.")
       break
   else:
-    mm = 0 if current_function == 0 else 1
+    first = 0
     for _ in range(p[4]):
-      addr = mastermind[mm].alloc(current_type, "variable")
-      zenmind.update({addr: 1})
-    function_dir[current_function][5].append((p[2], current_type, (addr+1)-p[4], [p[4]]))
+      addr = koan.meimei(current_function, current_type, "variable")
+      if first == 0: first = addr
+    function_dir[current_function][5].append((p[2], current_type, first, [p[4]]))
 
 def p_auxg(p):
   '''auxg : COMMA ID BOX_L INTEGER BOX_R auxg
@@ -227,11 +218,11 @@ def p_auxg(p):
         raise zs.ZenRedefinedID(f"zen::cmp > {p[2]} is already defined.")
         break
     else:
-      mm = 0 if current_function == 0 else 1
+      first = 0
       for _ in range(p[4]):
-        addr = mastermind[mm].alloc(current_type, "variable")
-        zenmind.update({addr: 1})
-      function_dir[current_function][5].append((p[2], current_type, (addr+1)-p[4], [p[4]]))
+        addr = koan.meimei(current_function, current_type, "variable")
+        if first == 0: first = addr
+      function_dir[current_function][5].append((p[2], current_type, first, [p[4]]))
 
 def p_auxh(p):
   '''auxh : MATRIX ID BOX_L INTEGER COMMA INTEGER BOX_R auxi'''
@@ -240,11 +231,11 @@ def p_auxh(p):
       raise zs.ZenRedefinedID(f"zen::cmp > {p[2]} is already defined.")
       break
   else:
-    mm = 0 if current_function == 0 else 1
+    first = 0
     for _ in range(p[4]*p[6]):
-      addr = mastermind[mm].alloc(current_type, "variable")
-      zenmind.update({addr: 1})
-    function_dir[current_function][5].append((p[2], current_type, (addr+1)-p[4]*p[6], [p[4], p[6]]))
+      addr = koan.meimei(current_function, current_type, "variable")
+      if first == 0: first = addr
+    function_dir[current_function][5].append((p[2], current_type, first, [p[4], p[6]]))
 
 def p_auxi(p):
   '''auxi : COMMA ID BOX_L INTEGER COMMA INTEGER BOX_R auxi
@@ -255,11 +246,11 @@ def p_auxi(p):
         raise zs.ZenRedefinedID(f"zen::cmp > {p[2]} is already defined.")
         break
     else:
-      mm = 0 if current_function == 0 else 1
+      first = 0
       for _ in range(p[4]*p[6]):
-        addr = mastermind[mm].alloc(current_type, "variable")
-        zenmind.update({addr: 1})
-      function_dir[current_function][5].append((p[2], current_type, (addr+1)-p[4]*p[6], [p[4], p[6]]))
+        addr = koan.meimei(current_function, current_type, "variable")
+        if first == 0: first = addr
+      function_dir[current_function][5].append((p[2], current_type, first, [p[4], p[6]]))
 
 # Assignation
 def p_assign(p):
@@ -364,17 +355,11 @@ def p_n0901(p):
 
       otype = zs.check_compatible(ltype, operator, rtype)
       if otype == 3:
-        if current_function != 0:
-          temp = mastermind[1].alloc(otype, "temporal")
-        else:
-          temp = mastermind[0].alloc(otype, "temporal")
+        temp = koan.meimei(current_function, otype, "temporal")
         schema.append(zs.quad(operator,left,right,temp))
         if len(operator_stack) > 0:
           if operator_stack[-1] == 18:
-            if current_function != 0:
-              temp2 = mastermind[1].alloc(otype, "temporal")
-            else:
-              temp2 = mastermind[0].alloc(otype, "temporal")
+            temp2 = koan.meimei(current_function, otype, "temporal")
             schema.append(zs.quad(operator_stack[-1], temp, None, temp2))
             operator_stack.pop()
             operand_stack.append((temp2, 3))
@@ -388,12 +373,8 @@ def p_n0901(p):
       bit, btype = operand_stack[-1]
       operand_stack.pop()
       if btype == 3:
-        if current_function != 0:
-          temp = mastermind[1].alloc(otype, "temporal")
-        else:
-          temp = mastermind[0].alloc(otype, "temporal")
+        temp = koan.meimei(current_function, otype, "temporal")
         schema.append(zs.quad(operator,bit,None,temp))
-        zenmind.update({temp: 1})
         operand_stack.append((temp, btype))
 
 def p_auxm(p):
@@ -413,12 +394,8 @@ def p_comparison(p):
 
   otype = zs.check_compatible(ltype, operator, rtype)
   if otype == 3:
-    if current_function != 0:
-      temp = mastermind[1].alloc(otype, "temporal")
-    else:
-      temp = mastermind[0].alloc(otype, "temporal")
+    temp = koan.meimei(current_function, otype, "temporal")
     schema.append(zs.quad(operator,left,right,temp))
-    zenmind.update({temp: 1})
     operand_stack.append((temp, otype))
   else:
     raise zs.ZenTypeMismatch("zen::cmp > type mismatch: condition expected boolean result")
@@ -534,8 +511,7 @@ def p_n1303(p):
     raise zs.ZenTypeMismatch("zen::cmp > for-statement update clause expected int.")
   else:
     if zs.check_compatible(itype, 0, utype) == 0:
-      if current_function == 0: temp = mastermind[0].alloc(0, "temporal")
-      else: temp = mastermind[1].alloc(0, "temporal")
+      temp = koan.meimei(current_function, 0, "temporal")
       schema.append(zs.quad(1, update, iter, temp))
       schema.append(zs.quad(0, temp, None, iter))
       temp = jump_stack[-1]
@@ -604,12 +580,10 @@ def p_functiondef(p):
                  | voidfdef'''
   global current_function, function_def
   function_dir[current_function][5].clear()
-  fd_update(current_function, 6, mastermind[1].func_range(-1))
-  mastermind[1].drop_func()
+  fd_update(current_function, 6, koan.resources(current_function))
   schema.append(zs.quad(99, None, None, None))
   current_function = function_dir[current_function][3]
   function_def = False
-  rewind()
 
 def p_n1701(p):
   '''n1701 : '''
@@ -622,10 +596,9 @@ def p_n1701(p):
     global function_def
     function_def = True
     function_dir.append((p[-1], current_type, len(schema), current_function, [], [], None))
-    addr = mastermind[0].alloc(current_type, "function")
-    zenmind.update({addr: 1})
+    addr = koan.meimei(current_function, current_type, "function")
     function_dir[0][5].append((f"#{p[-1]}", current_type, addr))
-    mastermind[1].alloc_func()
+    koan.add_func()
     current_function = len(function_dir) - 1
 
 def p_n1702(p):
@@ -653,7 +626,7 @@ def p_n1801(p):
     global function_def
     function_def = True
     function_dir.append((p[-1], -1, len(schema), current_function, [], [], None))
-    mastermind[1].alloc_func()
+    koan.add_func()
     current_function = len(function_dir) - 1
 
 # Function call
@@ -678,14 +651,12 @@ def p_function(p):
   if len(operator_stack) > 0:
     if operator_stack[-1] != 0:
       operand_stack.pop()
-      mm = 1 if current_function == 0 else 0
-      temp = mastermind[mm].alloc(auxfvar[1], "temporal")
+      temp = koan.meimei(current_function, auxfvar[1], "temporal")
       schema.append(zs.quad(0, auxfvar[0], None, temp))
       operand_stack.append((temp, auxfvar[1]))
   else:
     operand_stack.pop()
-    mm = 1 if current_function == 0 else 0
-    temp = mastermind[mm].alloc(auxfvar[1], "temporal")
+    temp = koan.meimei(current_function, auxfvar[1], "temporal")
     schema.append(zs.quad(0, auxfvar[0], None, temp))
     operand_stack.append((temp, auxfvar[1]))
 
@@ -716,7 +687,7 @@ def p_vfunction(p):
   '''vfunction : ID n2001 PARNT_L params PARNT_R SMCLN'''
   global calling_function
   if len(parameter_stack) == par_limit_stack[-1][1]:
-    schema.append(zs.quad("gosub", None, None, calling_function))
+    schema.append(zs.quad("gosub", None, None, function_dir[calling_function][2]))
     par_limit_stack.pop()
     if len(par_limit_stack) > 0:
       calling_function = par_limit_stack[-1][0]
@@ -757,9 +728,7 @@ def p_n2101(p):
   '''n2101 : '''
   if function_def:
     function_dir[current_function][4].append(current_type)
-    mm = 0 if current_function == 0 else 1
-    addr = mastermind[mm].alloc(current_type, "variable")
-    zenmind.update({addr: 1})
+    addr = koan.meimei(current_function, current_type, "variable")
     function_dir[current_function][5].append((p[-1], current_type, addr))
 
 def p_auxp(p):
@@ -809,12 +778,9 @@ def p_direction(p):
             operand_stack.pop()
             if itype == 0:
               schema.append(zs.quad("check", index, 0, x[3][0]))
-              mm = 0 if current_function == 0 else 1
-              addr = mastermind[mm].alloc(0, "constant")
-              temp = mastermind[mm].alloc(0, "temporal")
-              zenmind.update({addr: x[2]})
-              schema.append(zs.quad(1, index, addr, temp))
-              operand_stack.append(("&"+str(temp), x[1]))
+              temp = koan.meimei(current_function, 0, "temporal")
+              schema.append(zs.quad(1, index, "*"+x[2], temp))
+              operand_stack.append(("&"+temp, x[1]))
               break
             else: raise zs.ZenTypeMismatch("zen::cmp > cannot use non-integer index for list.")
           else: raise zs.ZenTypeMismatch(f"zen::cmp > {x[0]} is not a list.")
@@ -829,12 +795,9 @@ def p_direction(p):
                 operand_stack.pop()
                 if itype == 0:
                   schema.append(zs.quad("check", index, 0, x[3][0]))
-                  mm = 0 if current_function == 0 else 1
-                  addr = mastermind[mm].alloc(0, "constant")
-                  temp = mastermind[mm].alloc(0, "temporal")
-                  zenmind.update({addr: x[2]})
-                  schema.append(zs.quad(1, index, addr, temp))
-                  operand_stack.append(("&"+str(temp), x[1]))
+                  temp = koan.meimei(current_function, 0, "temporal")
+                  schema.append(zs.quad(1, index, "*"+x[2], temp))
+                  operand_stack.append(("&"+temp, x[1]))
                   break
                 else: raise zs.ZenTypeMismatch("zen::cmp > cannot use non-integer index for list.")
               else: raise zs.ZenTypeMismatch(f"zen::cmp > {x[0]} is not a list.")
@@ -852,19 +815,17 @@ def p_direction(p):
             operand_stack.pop()
             if ctype == 0 and rtype == 0:
               schema.append(zs.quad("check", row, 0, x[3][0]))
-              mm = 0 if current_function == 0 else 1
-              addr = mastermind[mm].alloc(0, "constant")
-              temp = mastermind[mm].alloc(0, "temporal")
-              zenmind.update({addr: x[3][1]})
+              row = searchconst(row)
+              addr = searchconst(x[3][1])
+              temp = koan.meimei(current_function, 0, "temporal")
               schema.append(zs.quad(3, row, addr, temp))
               schema.append(zs.quad("check", col, 0, x[3][1]))
-              temp2 = mastermind[mm].alloc(0, "temporal")
+              col = searchconst(col)
+              temp2 = koan.meimei(current_function, 0, "temporal")
               schema.append(zs.quad(1, temp, col, temp2))
-              temp = mastermind[mm].alloc(0, "temporal")
-              addr = mastermind[mm].alloc(0, "constant")
-              zenmind.update({addr: x[2]})
-              schema.append(zs.quad(1, temp2, addr, temp))
-              operand_stack.append(("&"+str(temp), x[1]))
+              temp = koan.meimei(current_function, 0, "temporal")
+              schema.append(zs.quad(1, temp2, "*"+x[2], temp))
+              operand_stack.append(("&"+temp, x[1]))
               break
             else: raise zs.ZenTypeMismatch("zen::cmp > cannot use non-integer index for list.")
           else: raise zs.ZenTypeMismatch(f"zen::cmp > {x[0]} is not a matrix.")
@@ -881,19 +842,17 @@ def p_direction(p):
                 operand_stack.pop()
                 if ctype == 0 and rtype == 0:
                   schema.append(zs.quad("check", row, 0, x[3][0]))
-                  mm = 0 if current_function == 0 else 1
-                  addr = mastermind[mm].alloc(0, "constant")
-                  temp = mastermind[mm].alloc(0, "temporal")
-                  zenmind.update({addr: x[3][1]})
+                  row = searchconst(row)
+                  addr = searchconst(x[3][1])
+                  temp = koan.meimei(current_function, 0, "temporal")
                   schema.append(zs.quad(3, row, addr, temp))
                   schema.append(zs.quad("check", col, 0, x[3][1]))
-                  temp2 = mastermind[mm].alloc(0, "temporal")
+                  col = searchconst(col)
+                  temp2 = koan.meimei(current_function, 0, "temporal")
                   schema.append(zs.quad(1, temp, col, temp2))
-                  temp = mastermind[mm].alloc(0, "temporal")
-                  addr = mastermind[mm].alloc(0, "constant")
-                  zenmind.update({addr: x[2]})
-                  schema.append(zs.quad(1, temp2, addr, temp))
-                  operand_stack.append(("&"+str(temp), x[1]))
+                  temp = koan.meimei(current_function, 0, "temporal")
+                  schema.append(zs.quad(1, temp2, "*"+x[2], temp))
+                  operand_stack.append(("&"+temp, x[1]))
                   break
                 else: raise zs.ZenTypeMismatch("zen::cmp > cannot use non-integer index for list.")
               else: raise zs.ZenTypeMismatch(f"zen::cmp > {x[0]} is not a matrix.")
@@ -923,12 +882,8 @@ def p_n2401(p):
   
       otype = zs.check_compatible(ltype, operator, rtype)
       if otype != -1:
-        if current_function != 0:
-          temp = mastermind[1].alloc(otype, "temporal")
-        else:
-          temp = mastermind[0].alloc(otype, "temporal")
+        temp = koan.meimei(current_function, otype, "temporal")
         schema.append(zs.quad(operator,left,right,temp))
-        zenmind.update({temp: 1})
         operand_stack.append((temp, otype))
       else:
         raise zs.ZenTypeMismatch(f"zen::cmp > type mismatch: can't operate {ltype} {operator} {rtype}")
@@ -958,10 +913,7 @@ def p_n2501(p):
   
       otype = zs.check_compatible(ltype, operator, rtype)
       if otype != -1:
-        if current_function != 0:
-          temp = mastermind[1].alloc(otype, "temporal")
-        else:
-          temp = mastermind[0].alloc(otype, "temporal")
+        temp = koan.meimei(current_function, otype, "temporal")
         schema.append(zs.quad(operator,left,right,temp))
         zenmind.update({temp: 1})
         operand_stack.append((temp, otype))
@@ -988,8 +940,7 @@ def p_base(p):
     operand_stack.pop()
     otype = zs.check_compatible(btype, op, rtype)
     if otype != -1:
-      mm = 0 if current_function == 0 else 1
-      temp = mastermind[mm].alloc(current_type, "temporal")
+      temp = koan.meimei(current_function, current_type, "temporal")
       operand_stack.append((temp, current_type))
       zenmind.update({temp: 1})
       schema.append(zs.quad(op, base, relation, temp))
@@ -1029,14 +980,8 @@ def p_n2702(p):
   global const_temporal
   const, ctype = const_temporal
   const_temporal = None
-  addr = searchconst(current_function, const)
-  if addr != -1:
-    operand_stack.append((addr, ctype))
-  else:
-    mm = 0 if current_function == 0 else 1
-    addr = mastermind[mm].alloc(ctype, "constant")
-    zenmind.update({addr: const})
-    operand_stack.append((addr, ctype))
+  addr = searchconst(const)
+  operand_stack.append((addr, ctype))
 
 def p_n2703(p):
   '''n2703 : '''
@@ -1044,14 +989,8 @@ def p_n2703(p):
   const, ctype = const_temporal
   const_temporal = None
   const = -const
-  addr = searchconst(current_function, const)
-  if addr != -1:
-    operand_stack.append((addr, ctype))
-  else:
-    mm = 0 if current_function == 0 else 1
-    addr = mastermind[mm].alloc(ctype, "constant")
-    zenmind.update({addr: const})
-    operand_stack.append((addr, ctype))
+  addr = searchconst(const)
+  operand_stack.append((addr, ctype))
 
 # Logical operator appearance
 def p_logicop(p):
@@ -1096,19 +1035,14 @@ def p_dataset(p):
         for i in range(tablecols):
           addr.append(operand_stack[-1])
           operand_stack.pop()
-        mm = 0 if current_function == 0 else 1
-        point = searchconst(mm, x[2]+p[5]*x[3][1])
-        plus = searchconst(mm, 1)
+        schema.append(zs.quad("prepare", p[5], x[3][1], x[2]))
+        i = 0
         while addr:
           if addr[-1][0] != "pass":
-            schema.append(zs.quad(0, addr[-1][0], None, point))
-            addr.pop()
-            next = searchconst(mm, zenmind[point]+1)
-            if len(addr) > 0:
-              schema.append(zs.quad(1, point, plus, next))
-              point = next
-          else:
-            addr.pop()
+            schema.append(zs.quad(0, addr[-1][0], None, i))
+          addr.pop()
+          i += 1
+        schema.append(zs.quad("upend", None, None, None))
       else:
         raise zs.ZenInvalidType(f"zen::cmp > variable {x[0]} is not a data table.")
   else:
@@ -1122,18 +1056,14 @@ def p_dataset(p):
             for i in range(tablecols):
               addr.append(operand_stack[-1])
               operand_stack.pop()
-            point = searchconst(0, x[2]+p[5]*x[3][1])
-            plus = searchconst(0, 1)
+            schema.append(zs.quad("prepare", p[5], x[3][1], x[2]))
+            i = 0
             while addr:
               if addr[-1][0] != "pass":
-                schema.append(zs.quad(0, addr[-1][0], None, point))
-                addr.pop()
-                next = searchconst(0, zenmind[point]+1)
-                if len(addr) > 0:
-                  schema.append(zs.quad(1, point, plus, next))
-                  point = next
-              else:
-                addr.pop()
+                schema.append(zs.quad(0, addr[-1][0], None, i))
+              addr.pop()
+              i += 1
+            schema.append(zs.quad("upend", None, None, None))
           else:
             raise zs.ZenInvalidType(f"zen::cmp > variable {p[3]} is not a data table.")
     else: 
@@ -1164,8 +1094,7 @@ def p_datacalc(p):
               | VAR PARNT_L ID COLON STRING PARNT_R
               | SD PARNT_L ID COLON STRING PARNT_R
               | CORR PARNT_L ID COLON STRING COMMA STRING PARNT_R'''
-  mm = 0 if current_function == 0 else 1
-  temp = mastermind[mm].alloc(1, "temporal")
+  temp = koan.meimei(current_function, 1, "temporal")
   for x in function_dir[current_function][5]:
     if p[3] == x[0]:
       if x[1] == 5:
@@ -1175,32 +1104,32 @@ def p_datacalc(p):
             if y[1] == 0 or y[1] == 1:
               if p[1] == r'MAX':
                 schema.append(zs.quad("max", None, x[2], i))
-                schema.append(zs.quad(0, special_addr, None, temp))
+                schema.append(zs.quad(0, 1500000, None, temp))
                 operand_stack.append((temp, 1))
                 return
               elif p[1] == r'MIN':
                 schema.append(zs.quad("min", None, x[2], i))
-                schema.append(zs.quad(0, special_addr, None, temp))
+                schema.append(zs.quad(0, 1500000, None, temp))
                 operand_stack.append((temp, 1))
                 return
               elif p[1] == r'SUM':
                 schema.append(zs.quad("sum", None, x[2], i))
-                schema.append(zs.quad(0, special_addr, None, temp))
+                schema.append(zs.quad(0, 1500000, None, temp))
                 operand_stack.append((temp, 1))
                 return
               elif p[1] == r'MEAN':
                 schema.append(zs.quad("mean", None, x[2], i))
-                schema.append(zs.quad(0, special_addr, None, temp))
+                schema.append(zs.quad(0, 1500000, None, temp))
                 operand_stack.append((temp, 1))
                 return
               elif p[1] == r'VAR':
                 schema.append(zs.quad("var", None, x[2], i))
-                schema.append(zs.quad(0, special_addr, None, temp))
+                schema.append(zs.quad(0, 1500000, None, temp))
                 operand_stack.append((temp, 1))
                 return
               elif p[1] == r'SDEV':
                 schema.append(zs.quad("sdev", None, x[2], i))
-                schema.append(zs.quad(0, special_addr, None, temp))
+                schema.append(zs.quad(0, 1500000, None, temp))
                 operand_stack.append((temp, 1))
                 return
               elif p[1] == r'CORR':
@@ -1209,7 +1138,7 @@ def p_datacalc(p):
                   if str(p[7]) == z[0]:
                     if z[1] == 0 or z[1] == 1:
                       schema.append(zs.quad("corr", x[2], i, j))
-                      schema.append(zs.quad(0, special_addr, None, temp))
+                      schema.append(zs.quad(0, 1500000, None, temp))
                       operand_stack.append((temp, 1))
                       return
                     else: raise zs.ZenTypeMismatch(f"zen::cmp > column {p[7]} is not numerical.")
@@ -1230,32 +1159,32 @@ def p_datacalc(p):
                 if y[1] == 0:
                   if p[1] == r'MAX':
                     schema.append(zs.quad("max", None, x[2], i))
-                    schema.append(zs.quad(0, special_addr, None, temp))
+                    schema.append(zs.quad(0, 1500000, None, temp))
                     operand_stack.append((temp, 1))
                     return
                   elif p[1] == r'MIN':
                     schema.append(zs.quad("min", None, x[2], i))
-                    schema.append(zs.quad(0, special_addr, None, temp))
+                    schema.append(zs.quad(0, 1500000, None, temp))
                     operand_stack.append((temp, 1))
                     return
                   elif p[1] == r'SUM':
                     schema.append(zs.quad("sum", None, x[2], i))
-                    schema.append(zs.quad(0, special_addr, None, temp))
+                    schema.append(zs.quad(0, 1500000, None, temp))
                     operand_stack.append((temp, 1))
                     return
                   elif p[1] == r'MEAN':
                     schema.append(zs.quad("mean", None, x[2], i))
-                    schema.append(zs.quad(0, special_addr, None, temp))
+                    schema.append(zs.quad(0, 1500000, None, temp))
                     operand_stack.append((temp, 1))
                     return
                   elif p[1] == r'VAR':
                     schema.append(zs.quad("var", None, x[2], i))
-                    schema.append(zs.quad(0, special_addr, None, temp))
+                    schema.append(zs.quad(0, 1500000, None, temp))
                     operand_stack.append((temp, 1))
                     return
                   elif p[1] == r'SDEV':
                     schema.append(zs.quad("sdev", None, x[2], i))
-                    schema.append(zs.quad(0, special_addr, None, temp))
+                    schema.append(zs.quad(0, 1500000, None, temp))
                     operand_stack.append((temp, 1))
                     return
                   elif p[1] == r'CORR':
@@ -1264,7 +1193,7 @@ def p_datacalc(p):
                       if p[7] == z[0]:
                         if z[1] == 0:
                           schema.append(zs.quad("corr", 0, i, j))
-                          schema.append(zs.quad(0, special_addr, None, temp))
+                          schema.append(zs.quad(0, 1500000, None, temp))
                           operand_stack.append((temp, 1))
                           return
                         else: raise zs.ZenTypeMismatch(f"zen::cmp > column {p[7]} is not int.")
@@ -1358,36 +1287,38 @@ def p_n0001(p):
   quad_update(jump_stack[-1], 3, len(schema))
   jump_stack.pop()
   function_dir.append(("main", None, len(schema), 0, None, [], None))
+  koan.add_func()
   current_function = len(function_dir) - 1
 
 def p_n0002(p):
   '''n0002 : '''
   schema.append((999,-1,-1,-1))
+  fd = adapt_function_dir()
   # Temporal instructions------------
-  for x in function_dir:
-    print(x)
-  print("\nJS: ", jump_stack)
-  print("OTS:", operand_stack)
-  print("OS: ", operator_stack, "\n")
-  i = 0
-  for x in schema:
-    print(i, ".: ", x)
-    i += 1
-  print("\n")
+  # for x in function_dir:
+  #   print(x)
+  # print("\nJS: ", jump_stack)
+  # print("OTS:", operand_stack)
+  # print("OS: ", operator_stack, "\n")
+  # i = 0
+  # for x in schema:
+  #   print(i, ".: ", x)
+  #   i += 1
+  # print("\n")
+  # print(fd, "\n")
   # ----------------------------------
-  function_dir.clear()
+  koan.rest()
+  meditate(schema, fd, const_list)
 
 # YACC required error function
 def p_error(p):
   if p:
+    
     if p.type != 'COMMENT':
       print(f"zen::grm > syntax error at token {p.type} ({p.value}) at line {p.lineno} : {p.lexpos}\n")
   else:
     print("zen::grm > syntax error: unexpected end of input")
   
-# ---Parser-------------------------------------------------------
+# ---Parser----------------------------------------------------------
 lexer = tokenizer()
 parser = yacc.yacc()
-
-# ---Call to ZenMaster--------------------------------------------
-#meditate(schema, zenmind)

@@ -1,17 +1,33 @@
 # ZenCode Test 01: #
 # Assignation and Console Interaction #
+set int a;
+set dec d;
+
 main {
-  set int a, b, c;
-  set dec d, e, f;
+  set int b, c;
+  set dec e, f;
+  set char g, h;
+  set bool i, j;
 
   a << 2;
   b << 3;
-  c << 5;
   d << 8.4;
   e << 2.3;
-  f << 5.2;
 
-  
+  cread << c;
+  cread << f;
+  cread << h;
+  cread << j;
+  cwrite << a;
+  cwrite << b;
+  cwrite << c;
+  # cwrite << d; #
+  cwrite << e;
+  cwrite << f;
+  cwrite << g;
+  cwrite << h;
+  cwrite << i;
+  cwrite << j;
 
   end
 }

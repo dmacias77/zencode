@@ -35,7 +35,6 @@ def check_compatible(left, operator, right):
   if operator in range(0,7): comp = zenocube[left][right][operator]
   elif operator in range(7,13): comp = zenocube[left][right][7]
   elif operator in range(19,21): comp = zenocube[left][right][8]
-  print("::zs.cc(", left, right, operator, ") : ", comp)
   return comp
 
 # ---Error Classes------------------------------------------------
@@ -101,6 +100,7 @@ def storef(origin: str):
     elif origin == "check": return 25
     elif origin == "ndist": return 36
     elif origin == "binom": return 37
+    elif origin == "upend": return 49
   elif len(origin) == 6:
     if origin == "goto-t": return 14
     elif origin == "goto-f": return 15
@@ -122,8 +122,6 @@ def quad(operation, element_1, element_2, element_3):
   if element_3 != None:
     q3 = element_3
   if isinstance(operation, str):
-    print((storef(operation), q1, q2, q3))
     return (storef(operation), q1, q2, q3)
   else:
-    print((operation, q1, q2, q3))
     return (operation, q1, q2, q3)

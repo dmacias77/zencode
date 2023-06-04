@@ -1,24 +1,65 @@
 # David Macías (1283419) & Hannia Ortega (1283410)
-# ZENCODE [禅] Memory Allocator
-MALLOCMAX = 9999
+# ZENCODE [禅] ZenMind Administrators
+CONST_BOTTOM = 1500001
+MALLOCMAX = 999
 SUB_BOTTOM = 100000
 
 def ecapsdnim(sector: int):
-  slist = ["int", "dec", "char", "bool", "t.int", "t.dec", "t.char", "t.bool", "data", "const"]
+  slist = ["int", "dec", "char", "bool", "t.int", "t.dec", "t.char", "t.bool", "data"]
   return slist[sector]
 
 def mindspace(type: str, kind):
-  if kind == "constant": return 9
-  else:
-    x = -1
-    if type == "int": x = 0
-    elif type == "dec": x = 1
-    elif type == "char": x = 2
-    elif type == "bool": x = 3
-    elif type == "data": x = 8
-    if kind == "temporal": x += 4
-    return x
+  x = -1
+  if type == "int": x = 0
+  elif type == "dec": x = 1
+  elif type == "char": x = 2
+  elif type == "bool": x = 3
+  elif type == "data": x = 8
+  if kind == "temporal": x += 4
+  return x
 
+# Variable Renamer
+class Koan:
+  def __init__(self):
+    self.ck = -1
+    self.fnk = [[1,1,1,1,1,1,1,1,1,1]]
+
+  def add_func(self):
+    self.fnk.append([1,1,1,1,1,1,1,1,1,1])
+
+  def constant(self, value):
+    self.ck += 1
+    return CONST_BOTTOM + self.ck
+
+  def meimei(self, function, type, kind):
+    if isinstance(type, str):
+      sector = mindspace(type, kind)
+    else: sector = mindspace(ecapsdnim(type), kind)
+    if sector != -1:
+      if self.fnk[function][sector] < MALLOCMAX:
+        ID = str(1000 + self.fnk[function][sector])
+        name = str(function) + "." + str(sector) + "." + ID[1:]
+        self.fnk[function][sector] += 1
+        return name
+      else:
+        raise OverflowError()
+    else:
+      raise IOError()
+
+  def resources(self, function):
+    if function < len(self.fnk):
+      rlist = self.fnk[function]
+      for i in range(len(rlist)):
+        rlist[i] -= 1
+      return rlist
+    else:
+      raise OverflowError()
+
+  def rest(self):
+    self.ck = -1
+    self.fnk = []
+
+# Memory Administrator
 class MasterMind:
   def __init__(self, is_main: bool):
     self.next_free = []
@@ -31,7 +72,7 @@ class MasterMind:
       self.next_free.append(0)
     else:
       self.next_free.append(SUB_BOTTOM)
-      MALLOCMAX += 90000
+      MALLOCMAX += 99000
     self.limit.append(self.next_free[0]+MALLOCMAX) # integers : 0
     self.next_free.append(self.limit[0]+1)
     self.limit.append(self.next_free[1]+MALLOCMAX) # decimals : 1
@@ -48,30 +89,24 @@ class MasterMind:
     self.next_free.append(self.limit[6]+1)
     self.limit.append(self.next_free[7]+MALLOCMAX) # temp_bool: 7
     self.next_free.append(self.limit[7]+1)
-    self.limit.append(self.next_free[8]+(MALLOCMAX * 2 + 1)) # datatable: 8
-    self.next_free.append(self.limit[8]+1)
-    self.limit.append(self.next_free[9]+(MALLOCMAX * 2 + 1)) # constants: 9
+    self.limit.append(self.next_free[8]+(MALLOCMAX * 4 + 4)) # datatable: 8
 
-  def alloc(self, type, kind):
-    if isinstance(type, str):
-      sector = mindspace(type, kind)
-    else: sector = mindspace(ecapsdnim(type), kind)
-    if sector != -1:
-      if self.next_free[sector] < self.limit[sector]:
-        cell = self.next_free[sector]
-        self.next_free[sector] += 1
-        return cell
-      else:
-        raise OverflowError()
+  def alloc(self, meimei):
+    me, im, ei = meimei.split(".")
+    type = int(im)
+    if self.next_free[type] < self.limit[type]:
+      cell = self.next_free[type]
+      self.next_free[type] += 1
+      return cell
     else:
-      raise IOError()
+      raise OverflowError()
 
   def alloc_func(self):
     self.func_boundary.append((self.next_free[0], self.next_free[1],
                                self.next_free[2], self.next_free[3],
                                self.next_free[4], self.next_free[5],
                                self.next_free[6], self.next_free[7],
-                               self.next_free[8], self.next_free[9]))
+                               self.next_free[8]))
 
   def dir_range(self, type: int):
     if type != -1:
@@ -93,12 +128,6 @@ class MasterMind:
         top = self.next_free[type]
         return bottom, top
       else: return self.func_boundary[-1]
-  
-  def resources(self):
-    rtable = [self.next_free[0] - SUB_BOTTOM]
-    for i in range(1, 9):
-      rtable.append(self.next_free[i] - (self.limit[i-1] + 1))
-    return rtable
   
   def typeof(self, addr):
     for i in range(9):
