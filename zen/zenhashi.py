@@ -26,6 +26,10 @@ show_vb = False
 to_main = True
 
 # ---Helper Functions------------------------------------------------
+
+# ---Addr-
+# -----Returns the real address based on their meimei and the Tesseract's
+# -----current rotation.
 def addr(element):
   if isinstance(element, str):
     if element[0] == "&":
@@ -40,6 +44,8 @@ def addr(element):
   else:
     return element
 
+# ---DropFace-
+# -----Drops the current face of the Tesseract, and returns to the last one.
 def dropface():
   for x in tesseract[-1]:
     for y in x:
@@ -63,11 +69,18 @@ def newface(template):
     indexes = []
   tesseract.append(types)
 
+# ---PassConstants-
+# -----Allocs the constant list into the memory.
+# -----Tip: Direction 1500000 is only used for statistical results of
+# -----datatables.
 def pass_constants():
   zenmind[1500000] = 0
   for i in range(len(const_list)):
     zenmind[1500001+i] = const_list[i]
 
+# ---Value-
+# -----Returns the real value based on their meimei and the Tesseract's
+# -----current rotation.
 def value(element):
   if isinstance(element, str):
     if element[0] == "*":
@@ -85,6 +98,8 @@ def value(element):
   else:
     return zenmind[element]
 
+# ---Verbose-
+# -----Prints only if show_vb is True.
 def verbose(text):
   if show_vb: print(text)
 
@@ -420,22 +435,25 @@ def interpret():
       return 999
     state += 1
 
-# ---Starter Functions-----------------------------------------------
+# ---Starter Function------------------------------------------------
 def meditate(list1, list2, list3):
   global const_list, function, schema
   schema = list1
   function = list2
   const_list = list3
 
+  # Verbose-shows current schema.
   if show_vb:
     for i in range(len(schema)):
       print(i, ": ", schema[i])
     print("\n")
       
-  pass_constants()
-  newface(0)
-  
+  pass_constants() # Initializes the memory with the constants.
+  newface(0)       # Initializes the Tesseract
+
+  # Runs the interpretation.
   program = interpret()
-  
+
+  # Fallback
   if program != 999:
     raise OSError("zen::run > unexpected end.")

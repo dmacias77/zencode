@@ -8,8 +8,7 @@ from zen.zenlexicon import tokens, tokenizer
 from zen.zenmind import Koan
 import zen.zensemantics as zs
 
-# ---ZenMind (Memory Allocators)-------------------------------------
-zenmind = {}
+# ---Koan Memory Allocator)------------------------------------------
 koan = Koan()
 
 # ---Directories-----------------------------------------------------
@@ -28,22 +27,32 @@ read_write = -1
 tablecols = 0
 
 # ---Auxiliary Functions---------------------------------------------
+
+# ---AdaptFunctionDir-
+# -----Transforms the function directory in Koan templates for the
+# -----MasterMind and the Tesseract.
 def adapt_function_dir():
   light_fd = []
   for x in range(len(function_dir)):
     light_fd.append((function_dir[x][1], koan.resources(x)))
   return light_fd
 
+# ---FDUpdate-
+# -----Transition function to edit tuples in FD.
 def fd_update(fdID, element, new_value):
   temp = list(function_dir[fdID])
   temp[element] = new_value
   function_dir[fdID] = tuple(temp)
 
+# ---QuadUpdate-
+# -----Transition function to edit tuples in the Schema.
 def quad_update(quad_ID, element, new_value):
   temp = list(schema[quad_ID])
   temp[element] = new_value
   schema[quad_ID] = tuple(temp)
 
+# ---SearchConst-
+# -----Constant Administration Function.
 def searchconst(value):
   if value in const_list:
     return const_list.index(value) + 1500001
@@ -65,6 +74,8 @@ parameter_stack = []
 schema = []
 
 # ---Grammar Definitions & Semantics------------------------------
+# ---* The nXXXX functions are semantic neural points. Their
+# -----numeration is based on a function ID and its ID.
 
 # Program
 def p_program(p):
@@ -964,7 +975,6 @@ def p_n2501(p):
       if otype != -1:
         temp = koan.meimei(current_function, otype, "temporal")
         schema.append(zs.quad(operator,left,right,temp))
-        zenmind.update({temp: 1})
         operand_stack.append((temp, otype))
       else:
         raise zs.ZenTypeMismatch(f"zen::cmp > type mismatch: can't operate {ltype} {operator} {rtype}")
@@ -991,7 +1001,6 @@ def p_base(p):
     if otype != -1:
       temp = koan.meimei(current_function, current_type, "temporal")
       operand_stack.append((temp, current_type))
-      zenmind.update({temp: 1})
       schema.append(zs.quad(op, base, relation, temp))
     else:
       raise zs.ZenTypeMismatch(f"zen::cmp > type mismatch: can't operate {btype} {op} {rtype}")
@@ -1333,7 +1342,9 @@ def p_mains(p):
   schema.append((999,-1,-1,-1))
   fd = adapt_function_dir()
   function_dir.clear()
+  # --- Koan Memory Release
   koan.rest()
+  # --- Call to the Virtual Machine
   meditate(schema, fd, const_list)
 
 def p_n0001(p):

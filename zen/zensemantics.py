@@ -3,9 +3,6 @@
 
 # ---Compiling Structures-----------------------------------------
 
-# Predefined Types
-basic_types = { "int": int, "dec": float, "char": str, "bool": bool }
-
 # Semantic Cube
 # -- Key: int : 0 | dec : 1 | char : 2 | bool : 3 | err : -1
 zenocube = [
@@ -22,12 +19,14 @@ zenocube = [
    [-1, 1, 1,-1,-1,-1,-1,-1,-1],  #         dec
    [ 2,-1,-1,-1,-1,-1,-1, 3,-1],  #         char
    [-1,-1,-1,-1,-1,-1,-1,-1,-1]], #         bool
-  [[ 1,-1,-1,-1,-1,-1,-1, 3,-1],  # bool -  int
+  [[ 3,-1,-1,-1,-1,-1,-1, 3,-1],  # bool -  int
    [-1,-1,-1,-1,-1,-1,-1, 3,-1],  #         dec
    [-1,-1,-1,-1,-1,-1,-1,-1,-1],  #         char
    [ 3,-1,-1,-1,-1,-1,-1, 3, 3]]  #         bool
 ]
 
+# ---CheckCompatible-
+# -----Consults the ZenoCube to see if types are castable to operate.
 def check_compatible(left, operator, right):
   comp = -1
   if left > 3 or right > 3: return comp
@@ -66,6 +65,8 @@ class ZenUndefinedID(Exception):
   pass
 
 # ---Auxiliary Functions------------------------------------------
+# ---SToRef-
+# -----Transforms strings to reference to instructions.
 def storef(origin: str):
   if len(origin) == 1:
     if origin == '+': return 1
@@ -115,6 +116,8 @@ def storef(origin: str):
     if origin == "prepare": return 35
   else: raise IOError()
 
+# ---Quad-
+# Formats a tuple to a "usable" tuple for the Hashi
 def quad(operation, element_1, element_2, element_3):
   q1 = q2 = q3 = -1
   
