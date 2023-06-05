@@ -1,0 +1,36 @@
+# ZenCode Test 08: #
+# Arrays #
+
+main {
+  set int list alpha[3];
+  set dec list bravo[4];
+  set int c;
+  set int matrix delta[4,3];
+  set int e, f;
+
+  c << 3;
+  e << 6;
+  alpha[1] << 2;
+  alpha[2] << e * c;
+  alpha[c-3] << 4;
+
+  loop c in range(0 : 1 : c = 3) {
+    cwrite << alpha[c];
+  }
+
+  e << 0;
+  loop c in range(0 : 1 : c = 4) {
+    loop f in range(0 : 1 : f = 3) {
+      delta[c,f] << e;
+      e << e + 1;
+    }
+  }
+
+  loop c in range(0 : 1 : c = 4) {
+    loop f in range(0 : 1 : f = 3) {
+      cwrite << delta[c,f];
+    }
+  }
+
+  end
+}

@@ -1,0 +1,26 @@
+# Required Test #
+# Fibonacci (Cíclico) #
+
+main {
+  set int a, b, i, k, x;
+  set int list fib[3];
+
+  fib[0] << 0;
+  fib[1] << 1;
+  fib[2] << 1;
+
+  cwrite << "Elements:";
+  cread << k;
+
+  loop i in range(0 : 1 : i = k) {
+    x << fib[i % 3];
+    cwrite << x;
+
+    a << fib[(i + 1) % 3];
+    b << fib[(i + 2) % 3];
+
+    fib[i % 3] << a + b;
+  }
+
+  end
+}

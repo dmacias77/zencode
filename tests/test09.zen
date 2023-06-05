@@ -1,0 +1,44 @@
+# ZenCode Test 09: #
+# Datatables 1 #
+
+main {
+  create data table[
+    {text:"name"}, {dec:"un"}, {dec:"deux"}, {int:"trois"}
+  ][30];
+  set int a, b;
+
+  a << 8;
+  b << 3;
+
+  write in table[12] values (pass, a, 2 * 4, b + 8);
+
+  ndist fit table:"deux" with (0.25+b, a);
+  binomial fit table:"un" with (b, 0.6);
+
+  cwrite << "UN";
+  cwrite << "----------";
+  loop a in range(0 : 1 : a = 30) {
+    cwrite << table:"un"[a];
+  }
+  cwrite << "----------";
+  cwrite << " ";
+
+  cwrite << "DEUX";
+  cwrite << "----------";
+  loop a in range(0 : 1 : a = 30) {
+    cwrite << table:"deux"[a];
+  }
+  cwrite << "----------";
+  cwrite << " ";
+  cwrite << " ";
+
+  cwrite << SUM(table:"un");
+  cwrite << MAX(table:"deux");
+  cwrite << MIN(table:"un");
+  cwrite << SDEV(table:"deux");
+  cwrite << VAR(table:"un");
+  cwrite << MEAN(table:"deux");
+  cwrite << CORR(table:"un", "deux");
+
+  end
+}

@@ -1,0 +1,14 @@
+# ZenCode Test 06: #
+# Cyclic Statements: LOOP #
+
+main {
+  set int a, b;
+
+  a << 0;
+  b << 2;
+
+  loop a in range (b - 2 : 1 : a > 5)
+    cwrite << a;
+
+  end
+}

@@ -25,7 +25,7 @@ zenocube = [
   [[ 1,-1,-1,-1,-1,-1,-1, 3,-1],  # bool -  int
    [-1,-1,-1,-1,-1,-1,-1, 3,-1],  #         dec
    [-1,-1,-1,-1,-1,-1,-1,-1,-1],  #         char
-   [-1,-1,-1,-1,-1,-1,-1, 3, 3]]  #         bool
+   [ 3,-1,-1,-1,-1,-1,-1, 3, 3]]  #         bool
 ]
 
 def check_compatible(left, operator, right):
@@ -38,6 +38,9 @@ def check_compatible(left, operator, right):
   return comp
 
 # ---Error Classes------------------------------------------------
+class ZenDataTableCallError(Exception):
+  pass
+
 class ZenDataTableRedefinition(Exception):
   pass
 

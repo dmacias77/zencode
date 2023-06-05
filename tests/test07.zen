@@ -1,0 +1,24 @@
+# ZenCode Test 07: #
+# Functions #
+
+function int rojo() {
+  set int a, b;
+  a << 3;
+  cread << b;
+  return a + b;
+}
+
+function void azul() {
+  set int a;
+  set dec x;
+
+  a << 4;
+  x << 2.4 + rojo();
+  cwrite << x;
+}
+
+main {
+  azul();
+
+  end
+}

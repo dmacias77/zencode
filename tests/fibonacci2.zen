@@ -1,0 +1,33 @@
+# Required Test #
+# Fibonacci (Cíclico) #
+
+function int fibonacci(int n) {
+  set int a, b, x;
+
+  if (n <= 0)
+    x << 0;
+  else {
+    if (n = 1)
+      x << 1;
+    else {
+      a << fibonacci(n - 1);
+      b << fibonacci(n - 2);
+      x << a + b;
+    }      
+  }
+  return x;
+}
+
+main {
+  set int i, k, x;
+
+  cwrite << "Elements:";
+  cread << k;
+
+  loop i in range(0 : 1 : i = k) {
+    x << fibonacci(i);
+    cwrite << x;
+  }
+
+  end
+}

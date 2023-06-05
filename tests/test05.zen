@@ -1,0 +1,19 @@
+# ZenCode Test 05: #
+# Cyclic Statements: WHILE / DO-WHILE #
+
+main {
+  set int a;
+
+  a << 0;
+
+  while (a < 5) {
+    a << a + 1;
+    cwrite << a;
+  }
+
+  do
+    a << a - 1;
+  while (a > 0);
+
+  end
+}

@@ -1,0 +1,26 @@
+# Required Test #
+# Factorial (Cíclico) #
+
+function int factorial(int n) {
+  set int i, result;
+  result << 1;
+
+  loop i in range (2 : 1 : i > n)
+    result << result * i;
+
+  return result;
+}
+
+main {
+  set int fact, x;
+
+  cwrite << "Número: ";
+  cread << x;
+
+  fact << factorial(x);
+  cwrite << " ";
+  cwrite << "Factorial: ";
+  cwrite << fact;
+
+  end
+}

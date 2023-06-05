@@ -1,0 +1,23 @@
+# ZenCode Test 02: #
+# Arithmetic Operations #
+
+main {
+  set int a, b, c;
+  set dec d, e, f;
+
+  a << 6;
+  b << 15;
+  c << a + b;
+  cwrite << c;
+  d << 5.24;
+  cwrite << c - d;
+  e << d * a;
+  cwrite << e;
+  cwrite << c + d * a;
+  cwrite << e / a - b;
+  cwrite << b % a;
+  f << d ^ a;
+  cwrite << f;
+
+  end
+}

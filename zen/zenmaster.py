@@ -373,8 +373,8 @@ def p_n0901(p):
       bit, btype = operand_stack[-1]
       operand_stack.pop()
       if btype == 3:
-        temp = koan.meimei(current_function, otype, "temporal")
-        schema.append(zs.quad(operator,bit,None,temp))
+        temp = koan.meimei(current_function, btype, "temporal")
+        schema.append(zs.quad(18, bit, None, temp))
         operand_stack.append((temp, btype))
 
 def p_auxm(p):
@@ -430,7 +430,7 @@ def p_n1102(p):
 
 # Do-while statement
 def p_dowhiles(p):
-  '''dowhiles : DO n1201 auxk WHILE PARNT_L condition PARNT_R'''
+  '''dowhiles : DO n1201 auxk WHILE PARNT_L condition PARNT_R SMCLN'''
   cond, ctype = operand_stack[-1]
   operand_stack.pop()
   if ctype != 3:
@@ -539,8 +539,8 @@ def p_n1305(p):
 
 # Console interaction statement
 def p_console(p):
-  '''console : CREAD n1401 ASSIGN expression auxn SMCLN
-             | CWRITE n1401 ASSIGN expression auxn SMCLN'''
+  '''console : CREAD n1401 ASSIGN expression SMCLN
+             | CWRITE n1401 ASSIGN auxn SMCLN'''
   global read_write
   schema.append(zs.quad(16 + read_write, None, None, operand_stack[-1][0]))
   operand_stack.pop()
@@ -553,9 +553,11 @@ def p_n1401(p):
   else: read_write = 1
   
 def p_auxn(p):
-  '''auxn : ASSIGN expression auxn
-          | '''
-  pass
+  '''auxn : expression
+          | STRING'''
+  if p[1]:
+    addr = searchconst(p[1])
+    operand_stack.append((addr, 4))
 
 # Constant element usage
 def p_constant(p):
@@ -727,8 +729,8 @@ def p_args(p):
 def p_n2101(p):
   '''n2101 : '''
   if function_def:
-    function_dir[current_function][4].append(current_type)
     addr = koan.meimei(current_function, current_type, "variable")
+    function_dir[current_function][4].append((current_type, addr))
     function_dir[current_function][5].append((p[-1], current_type, addr))
 
 def p_auxp(p):
@@ -753,8 +755,8 @@ def p_n2201(p):
   if auxfvar != operand_stack[-1][0]:
     par, ptype = operand_stack[-1]
     operand_stack.pop()
-    if ptype == parameter_stack[-1][0]:
-      schema.append(zs.quad("param", par, None, function_dir[calling_function][5][parameter_stack[-1][1]-1][2]))
+    if ptype == parameter_stack[-1][0][0]:
+      schema.append(zs.quad("param", par, None, function_dir[calling_function][4][parameter_stack[-1][1]-1][1]))
       parameter_stack.pop()
     else:
       raise zs.ZenFunctionCallError(f"zen::cmp > invalid parameter on call to {function_dir[calling_function][0]}.")
@@ -768,7 +770,7 @@ def p_auxq(p):
 def p_direction(p):
   '''direction : ID BOX_L expression BOX_R
                | ID BOX_L expression COMMA expression BOX_R
-               | ID COLON ID BOX_L expression BOX_R'''
+               | ID COLON STRING BOX_L expression BOX_R'''
   if p[4] == ']':
     for x in function_dir[current_function][5]:
       if p[1] == x[0]:
@@ -815,12 +817,10 @@ def p_direction(p):
             operand_stack.pop()
             if ctype == 0 and rtype == 0:
               schema.append(zs.quad("check", row, 0, x[3][0]))
-              row = searchconst(row)
               addr = searchconst(x[3][1])
               temp = koan.meimei(current_function, 0, "temporal")
               schema.append(zs.quad(3, row, addr, temp))
               schema.append(zs.quad("check", col, 0, x[3][1]))
-              col = searchconst(col)
               temp2 = koan.meimei(current_function, 0, "temporal")
               schema.append(zs.quad(1, temp, col, temp2))
               temp = koan.meimei(current_function, 0, "temporal")
@@ -842,12 +842,10 @@ def p_direction(p):
                 operand_stack.pop()
                 if ctype == 0 and rtype == 0:
                   schema.append(zs.quad("check", row, 0, x[3][0]))
-                  row = searchconst(row)
                   addr = searchconst(x[3][1])
                   temp = koan.meimei(current_function, 0, "temporal")
                   schema.append(zs.quad(3, row, addr, temp))
                   schema.append(zs.quad("check", col, 0, x[3][1]))
-                  col = searchconst(col)
                   temp2 = koan.meimei(current_function, 0, "temporal")
                   schema.append(zs.quad(1, temp, col, temp2))
                   temp = koan.meimei(current_function, 0, "temporal")
@@ -860,7 +858,58 @@ def p_direction(p):
         else: raise zs.ZenUndefinedID(f"zen::cmp > '{p[-1]}' is never defined.")
       else: raise zs.ZenUndefinedID(f"zen::cmp > '{p[-1]}' is never defined.")
   else:
-    pass
+    for x in function_dir[current_function][5]:
+      if p[1] == x[0]:
+        if x[1] == 5:
+          i = 0
+          for y in x[4]:
+            if str(p[3]) == y[0]:
+              row, rtype = operand_stack[-1]
+              operand_stack.pop()
+              if rtype == 0:
+                schema.append(zs.quad("check", row, 0, x[3][0]))
+                clen = searchconst(x[3][1])
+                temp = koan.meimei(current_function, 0, "temporal")
+                schema.append(zs.quad(3, row, clen, temp))
+                col = searchconst(i)
+                temp2 = koan.meimei(current_function, 0, "temporal")
+                schema.append(zs.quad(1, temp, col, temp2))
+                temp = koan.meimei(current_function, 0, "temporal")
+                schema.append(zs.quad(1, temp2, "*"+x[2], temp))
+                operand_stack.append(("&"+temp, x[1]))
+                return
+              else: raise zs.ZenTypeMismatch("zen::cmp > cannot use non-integer index for list.")
+            i += 1
+          else: raise zs.ZenDataTableCallError(f"zen::cmp > datatable has no column {str(p[3])}.")
+        else: raise zs.ZenTypeMismatch(f"zen::cmp > {x[0]} is not a datatable.")
+    else:
+      if current_function != 0:
+        for x in function_dir[0][5]:
+          if p[1] == x[0]:
+            if x[1] == 5:
+              i = 0
+              for y in x[4]:
+                if str(p[3]) == y[0]:
+                  row, rtype = operand_stack[-1]
+                  operand_stack.pop()
+                  if rtype == 0:
+                    schema.append(zs.quad("check", row, 0, x[3][0]))
+                    clen = searchconst(x[3][1])
+                    temp = koan.meimei(current_function, 0, "temporal")
+                    schema.append(zs.quad(3, row, clen, temp))
+                    col = searchconst(i)
+                    temp2 = koan.meimei(current_function, 0, "temporal")
+                    schema.append(zs.quad(1, temp, col, temp2))
+                    temp = koan.meimei(current_function, 0, "temporal")
+                    schema.append(zs.quad(1, temp2, "*"+x[2], temp))
+                    operand_stack.append(("&"+temp, x[1]))
+                    return
+                  else: raise zs.ZenTypeMismatch("zen::cmp > cannot use non-integer index for list.")
+              else: raise zs.ZenDataTableCallError(f"zen::cmp > datatable has no column {str(p[3])}.")
+            else: raise zs.ZenTypeMismatch(f"zen::cmp > {x[0]} is not a datatable.")
+        else: raise zs.ZenUndefinedID(f"zen::cmp > '{p[1]}' is never defined.")
+      else: raise zs.ZenUndefinedID(f"zen::cmp > '{p[1]}' is never defined.")
+  
 
 # Arithmetic expression
 def p_expression(p):
@@ -955,7 +1004,8 @@ def p_factor(p):
             | direction
             | function
             | datacalc
-            | PARNT_L expression PARNT_R'''
+            | PARNT_L expression PARNT_R
+            | BRACE_L condition BRACE_R'''
   pass
 
 def p_n2701(p):
@@ -1103,32 +1153,32 @@ def p_datacalc(p):
           if str(p[5]) == y[0]:  
             if y[1] == 0 or y[1] == 1:
               if p[1] == r'MAX':
-                schema.append(zs.quad("max", None, x[2], i))
+                schema.append(zs.quad("max", i, x[3][0], x[3][1]))
                 schema.append(zs.quad(0, 1500000, None, temp))
                 operand_stack.append((temp, 1))
                 return
               elif p[1] == r'MIN':
-                schema.append(zs.quad("min", None, x[2], i))
+                schema.append(zs.quad("min", i, x[3][0], x[3][1]))
                 schema.append(zs.quad(0, 1500000, None, temp))
                 operand_stack.append((temp, 1))
                 return
               elif p[1] == r'SUM':
-                schema.append(zs.quad("sum", None, x[2], i))
+                schema.append(zs.quad("sum", i, x[3][0], x[3][1]))
                 schema.append(zs.quad(0, 1500000, None, temp))
                 operand_stack.append((temp, 1))
                 return
               elif p[1] == r'MEAN':
-                schema.append(zs.quad("mean", None, x[2], i))
+                schema.append(zs.quad("mean", i, x[3][0], x[3][1]))
                 schema.append(zs.quad(0, 1500000, None, temp))
                 operand_stack.append((temp, 1))
                 return
               elif p[1] == r'VAR':
-                schema.append(zs.quad("var", None, x[2], i))
+                schema.append(zs.quad("var", i, x[3][0], x[3][1]))
                 schema.append(zs.quad(0, 1500000, None, temp))
                 operand_stack.append((temp, 1))
                 return
               elif p[1] == r'SDEV':
-                schema.append(zs.quad("sdev", None, x[2], i))
+                schema.append(zs.quad("sdev", i, x[3][0], x[3][1]))
                 schema.append(zs.quad(0, 1500000, None, temp))
                 operand_stack.append((temp, 1))
                 return
@@ -1137,7 +1187,8 @@ def p_datacalc(p):
                 for z in x[4]:
                   if str(p[7]) == z[0]:
                     if z[1] == 0 or z[1] == 1:
-                      schema.append(zs.quad("corr", x[2], i, j))
+                      schema.append(zs.quad("corr", i, x[3][0], x[3][1]))
+                      schema.append(zs.quad("corr", j, x[3][0], x[3][1]))
                       schema.append(zs.quad(0, 1500000, None, temp))
                       operand_stack.append((temp, 1))
                       return
@@ -1215,7 +1266,7 @@ def p_datadist(p):
         i = 0
         for y in x[4]:
           if str(p[5]) == y[0]:  
-            if y[1] == 0 or y[1] == 1:
+            if y[1] == 1:
               if p[1] == r'ndist':
                 stdev, sdtype = operand_stack[-1]
                 operand_stack.pop()
@@ -1223,7 +1274,7 @@ def p_datadist(p):
                 operand_stack.pop()
                 if (mtype == 0 or mtype == 1) and (sdtype == 0 or sdtype == 1):
                   schema.append(zs.quad("prepare", mean, stdev, "ndist"))
-                  schema.append(zs.quad("ndist", None, x[2], i))
+                  schema.append(zs.quad("ndist", i, x[3][0], x[3][1]))
                   return
                 else: raise zs.ZenInvalidType("zen::cmp > call to normal distribution fitting requires numerical attributes.")
               elif p[1] == r'binomial':
@@ -1233,10 +1284,10 @@ def p_datadist(p):
                 operand_stack.pop()
                 if (ttype == 0) and (ptype == 1):
                   schema.append(zs.quad("prepare", tests, prob, "binom"))
-                  schema.append(zs.quad("binom", None, x[2], i))
+                  schema.append(zs.quad("binom", i, x[3][0], x[3][1]))
                   return
                 else: raise zs.ZenInvalidType("zen::cmp > call to binomial distribution fitting requires numerical attributes.")
-            else: raise zs.ZenTypeMismatch(f"zen::cmp > column {p[5]} is not numerical.")
+            else: raise zs.ZenTypeMismatch(f"zen::cmp > column {p[5]} is not decimal.")
           i += 1
         else: raise zs.ZenUndefinedID(f"zen::cmp > data table has no column {p[5]}.")
       else: raise zs.ZenInvalidType(f"zen::cmp > variable {p[3]} is not a data table.")
@@ -1256,7 +1307,7 @@ def p_datadist(p):
                     operand_stack.pop()
                     if (mtype == 0 or mtype == 1) and (sdtype == 0 or sdtype == 1):
                       schema.append(zs.quad("prepare", mean, stdev, "ndist"))
-                      schema.append(zs.quad("ndist", None, x[2], i))
+                      schema.append(zs.quad("ndist", i, x[3][0], x[3][1]))
                       return
                     else: raise zs.ZenInvalidType("zen::cmp > call to normal distribution fitting requires numerical attributes.")
                   elif p[1] == r'binomial':
@@ -1266,7 +1317,7 @@ def p_datadist(p):
                     operand_stack.pop()
                     if (ttype == 0) and (ptype == 1):
                       schema.append(zs.quad("prepare", tests, prob, "binom"))
-                      schema.append(zs.quad("binom", None, x[2], i))
+                      schema.append(zs.quad("binom", i, x[3][0], x[3][1]))
                       return
                     else: raise zs.ZenInvalidType("zen::cmp > call to binomial distribution fitting requires numerical attributes.")
                 else: raise zs.ZenTypeMismatch(f"zen::cmp > column {p[5]} is not numerical.")
@@ -1278,8 +1329,12 @@ def p_datadist(p):
       
 # Main section
 def p_mains(p):
-  '''mains : MAIN BRACE_L n0001 vars statement auxl END n0002 BRACE_R'''
-  pass
+  '''mains : MAIN BRACE_L n0001 vars statement auxl END BRACE_R'''
+  schema.append((999,-1,-1,-1))
+  fd = adapt_function_dir()
+  function_dir.clear()
+  koan.rest()
+  meditate(schema, fd, const_list)
 
 def p_n0001(p):
   '''n0001 : '''
@@ -1290,34 +1345,12 @@ def p_n0001(p):
   koan.add_func()
   current_function = len(function_dir) - 1
 
-def p_n0002(p):
-  '''n0002 : '''
-  schema.append((999,-1,-1,-1))
-  fd = adapt_function_dir()
-  # Temporal instructions------------
-  # for x in function_dir:
-  #   print(x)
-  # print("\nJS: ", jump_stack)
-  # print("OTS:", operand_stack)
-  # print("OS: ", operator_stack, "\n")
-  # i = 0
-  # for x in schema:
-  #   print(i, ".: ", x)
-  #   i += 1
-  # print("\n")
-  # print(fd, "\n")
-  # ----------------------------------
-  koan.rest()
-  meditate(schema, fd, const_list)
-
 # YACC required error function
 def p_error(p):
   if p:
-    
-    if p.type != 'COMMENT':
-      print(f"zen::grm > syntax error at token {p.type} ({p.value}) at line {p.lineno} : {p.lexpos}\n")
+    raise SyntaxError(f"zen::grm > syntax error at token {p.type} ({p.value}) at line {p.lineno} : {p.lexpos}\n")
   else:
-    print("zen::grm > syntax error: unexpected end of input")
+    raise OSError("zen::grm > syntax error: unexpected end of input")
   
 # ---Parser----------------------------------------------------------
 lexer = tokenizer()

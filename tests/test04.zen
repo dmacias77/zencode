@@ -1,0 +1,21 @@
+# ZenCode Test 04: #
+# Conditional Statements: IF #
+
+main {
+  set int a, b, c;
+
+  a << 4;
+
+  if (a = 4)
+    cwrite << "a = 4";
+
+  b << 5;
+
+  if (b >< 5) {
+    cwrite << "b >< 5";
+    b << 6;
+  } else
+    cwrite << "b = 5";
+
+  end
+}

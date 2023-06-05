@@ -1,0 +1,43 @@
+Progreso:
+Implementados:   33/33
+Parsing Test:    33/33
+Function Test:   33/33
+Máquina Virtual:   1/1
+--------------------------------
+Total:              99.9%
+--------------------------------
+program	     1    ✓ ✓ ✓
+statement	   2    ✓ ✓ ✓
+vars		     3    ✓ ✓ ✓
+type		     4    ✓ ✓ ✓
+datatable    5    ✓ ✓ ✓
+var		       6    ✓ ✓ ✓
+assign	     7    ✓ ✓ ✓
+conds		     8    ✓ ✓ ✓
+condition	   9    ✓ ✓ ✓
+comparison	 10   ✓ ✓ ✓
+whiles	     11   ✓ ✓ ✓
+dowhiles	   12   ✓ ✓ ✓
+loops		     13   ✓ ✓ ✓
+console	     14   ✓ ✓ ✓
+comment	     15   ✓ ✓ ✓
+constant	   16   ✓ ✓ ✓
+functiondef	 17   ✓ ✓ ✓
+voidfdef	   18   ✓ ✓ ✓
+function	   19   ✓ ✓ ✓
+vfunction	   20   ✓ ✓ ✓
+args		     21   ✓ ✓ ✓
+params       22   ✓ ✓ ✓
+direction    23   ✓ ✓ ✓
+expression	 24   ✓ ✓ ✓
+term		     25   ✓ ✓ ✓
+base		     26   ✓ ✓ ✓
+factor	     27   ✓ ✓ ✓ 
+logicop	     28   ✓ ✓ ✓
+compop	     29   ✓ ✓ ✓
+dataset      30   ✓ ✓ ✓
+datacalc     31   ✓ ✓ ✓
+datadist     32   ✓ ✓ ✓
+mains		     0    ✓ ✓ ✓
+--------------------------------
+auxt

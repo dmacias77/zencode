@@ -48,7 +48,7 @@ class Koan:
 
   def resources(self, function):
     if function < len(self.fnk):
-      rlist = self.fnk[function]
+      rlist = self.fnk[function].copy()
       for i in range(len(rlist)):
         rlist[i] -= 1
       return rlist

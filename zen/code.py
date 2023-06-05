@@ -3,9 +3,9 @@
 from zen.zenmaster import parser
 
 def zazen(file):
-  print("\n\n\n")
+  print("\n")
   zen_program = open(file, "r")
-  parser.parse(zen_program.read())
+  parser.parse(zen_program.read(), debug=0)
 
 def zenlogo():
   print("\n          *%@@        %(                                                                  ")
