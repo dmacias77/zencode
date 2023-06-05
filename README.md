@@ -1,8 +1,9 @@
 # zencode
 -----------------------------------------------------------
+5 de junio, 2023:  
 
 ## Avance Real:
-> 🔲 Máquina Virtual en Proceso.  
+> ✅ Máquina Virtual Completa.  
 > ✅ El error de acomodo de la máquina virtual quedó resuelto.  
 > ✅ La semántica está completa.  
 > ✅ Datatable y sus funciones están definidos.  
