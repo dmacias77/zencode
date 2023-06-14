@@ -1,4 +1,4 @@
-# David Macías (1283419) & Hannia Ortega (1283410)
+# David Macías (1283419)
 # ZENCODE [禅] Semantic Tools
 
 # ---Compiling Structures-----------------------------------------
@@ -65,7 +65,8 @@ class ZenUndefinedID(Exception):
   pass
 
 # ---Auxiliary Functions------------------------------------------
-# ---SToRef-
+
+# -*-SToRef-
 # -----Transforms strings to reference to instructions.
 def storef(origin: str):
   if len(origin) == 1:
@@ -116,8 +117,8 @@ def storef(origin: str):
     if origin == "prepare": return 35
   else: raise IOError()
 
-# ---Quad-
-# Formats a tuple to a "usable" tuple for the Hashi
+# -*-Quad-
+# Formats a tuple to a "usable" 4-tuple for the Hashi
 def quad(operation, element_1, element_2, element_3):
   q1 = q2 = q3 = -1
   

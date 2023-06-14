@@ -1,4 +1,4 @@
-# David Macías (1283419) & Hannia Ortega (1283410)
+# David Macías (1283419)
 # ZENCODE [禅] Lexicon
 import zen.ply.lex as lex
 import re
@@ -151,7 +151,7 @@ def t_newline(t):
   r'\n+'
   t.lexer.lineno += len(t.value)
 
-# ---Tokenizer----------------------------------------------------
+# ---Tokenizer-------------------------------------------------------
 def tokenizer():
   return lex.lex()
-# ----------------------------------------------------------------
+# -------------------------------------------------------------------

@@ -1,8 +1,9 @@
 # zencode
 -----------------------------------------------------------
-5 de junio, 2023:  
+Versión 1.0 (13 de junio, 2023)   
 
 ## Avance Real:
+> ✅ Errores corregidos.  
 > ✅ Máquina Virtual Completa.  
 > ✅ El error de acomodo de la máquina virtual quedó resuelto.  
 > ✅ La semántica está completa.  

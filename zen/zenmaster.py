@@ -1,4 +1,4 @@
-# David Macías (1283419) & Hannia Ortega (1283410)
+# David Macías (1283419)
 # ZENCODE [禅] Grammar and Semantics
 
 import zen.ply.yacc as yacc
@@ -8,27 +8,28 @@ from zen.zenlexicon import tokens, tokenizer
 from zen.zenmind import Koan
 import zen.zensemantics as zs
 
-# ---Koan Memory Allocator)------------------------------------------
+# ---Koan Memory Allocator-------------------------------------------
 koan = Koan()
 
 # ---Directories-----------------------------------------------------
-const_list = []
-function_dir = []
-table_dir = []
+const_list = []          # List of constants used in the program
+function_dir = []        # Function Directory
+table_dir = []           # Datatable Directory
 
 # ---Pins------------------------------------------------------------
-calling_function = -1
-const_temporal = None
-current_function = 0
-current_type = -1
-function_def = False
-invert_result = False
-read_write = -1
-tablecols = 0
+calling_function = -1    # Function to be called
+const_temporal = None    # Constant temporal storage
+current_function = 0     # Current working function
+current_type = -1        # Current type casted
+function_def = False     # 'True' during function definition
+invert_result = False    # 'True' if a 'not' is read
+osfloor = [0]            # Operator_stack's floor
+read_write = -1          # Console interaction switch
+tablecols = 0            # Datatable column counter
 
 # ---Auxiliary Functions---------------------------------------------
 
-# ---AdaptFunctionDir-
+# -*-AdaptFunctionDir-
 # -----Transforms the function directory in Koan templates for the
 # -----MasterMind and the Tesseract.
 def adapt_function_dir():
@@ -37,21 +38,21 @@ def adapt_function_dir():
     light_fd.append((function_dir[x][1], koan.resources(x)))
   return light_fd
 
-# ---FDUpdate-
+# -*-FDUpdate-
 # -----Transition function to edit tuples in FD.
 def fd_update(fdID, element, new_value):
   temp = list(function_dir[fdID])
   temp[element] = new_value
   function_dir[fdID] = tuple(temp)
 
-# ---QuadUpdate-
+# -*-QuadUpdate-
 # -----Transition function to edit tuples in the Schema.
 def quad_update(quad_ID, element, new_value):
   temp = list(schema[quad_ID])
   temp[element] = new_value
   schema[quad_ID] = tuple(temp)
 
-# ---SearchConst-
+# -*-SearchConst-
 # -----Constant Administration Function.
 def searchconst(value):
   if value in const_list:
@@ -69,11 +70,11 @@ operator_stack = []
 par_limit_stack = []
 parameter_stack = []
 
-# ---Program's Schema---------------------------------------------
-# -----Contains the program in quadruples-------------------------
+# ---Program's Schema------------------------------------------------
+# -----Contains the program in quadruples----------------------------
 schema = []
 
-# ---Grammar Definitions & Semantics------------------------------
+# ---Grammar Definitions & Semantics---------------------------------
 # ---* The nXXXX functions are semantic neural points. Their
 # -----numeration is based on a function ID and its ID.
 
@@ -355,7 +356,7 @@ def p_condition(p):
 
 def p_n0901(p):
   '''n0901 : '''
-  if len(operator_stack) > 0:
+  if len(operator_stack) > osfloor[-1]:
     if operator_stack[-1] == 19 or operator_stack[-1] == 20:
       right, rtype = operand_stack[-1]
       operand_stack.pop()
@@ -368,7 +369,7 @@ def p_n0901(p):
       if otype == 3:
         temp = koan.meimei(current_function, otype, "temporal")
         schema.append(zs.quad(operator,left,right,temp))
-        if len(operator_stack) > 0:
+        if len(operator_stack) > osfloor[-1]:
           if operator_stack[-1] == 18:
             temp2 = koan.meimei(current_function, otype, "temporal")
             schema.append(zs.quad(operator_stack[-1], temp, None, temp2))
@@ -644,10 +645,10 @@ def p_n1801(p):
 
 # Function call
 def p_function(p):
-  '''function : ID n1901 PARNT_L params PARNT_R'''
+  '''function : ID n1901 PARNT_L n1902 params n1903 PARNT_R'''
   global calling_function
   if len(parameter_stack) == par_limit_stack[-1][1]:
-    schema.append(zs.quad("gosub", None, None, calling_function))
+    schema.append(zs.quad("gosub", None, None, function_dir[calling_function][2]))
     par_limit_stack.pop()
     if len(par_limit_stack) > 0:
       calling_function = par_limit_stack[-1][0]
@@ -661,7 +662,7 @@ def p_function(p):
       auxfvar = (x[2], x[1])
       operand_stack.append((x[2], x[1]))
       break
-  if len(operator_stack) > 0:
+  if len(operator_stack) > osfloor[-1]:
     if operator_stack[-1] != 0:
       operand_stack.pop()
       temp = koan.meimei(current_function, auxfvar[1], "temporal")
@@ -695,9 +696,17 @@ def p_n1901(p):
   else:
     zs.ZenFunctionCallError(f"zen::cmp > function {p[-1]} is not defined.")
 
+def p_n1902(p):
+  '''n1902 : '''
+  osfloor.append(len(operand_stack))
+
+def p_n1903(p):
+  '''n1903 : '''
+  osfloor.pop()
+
 # Void function call
 def p_vfunction(p):
-  '''vfunction : ID n2001 PARNT_L params PARNT_R SMCLN'''
+  '''vfunction : ID n2001 PARNT_L n2002 params n2003 PARNT_R SMCLN'''
   global calling_function
   if len(parameter_stack) == par_limit_stack[-1][1]:
     schema.append(zs.quad("gosub", None, None, function_dir[calling_function][2]))
@@ -730,6 +739,14 @@ def p_n2001(p):
       i += 1
   else:
     zs.ZenFunctionCallError(f"zen::cmp > function {p[-1]} is not defined.")
+
+def p_n2002(p):
+  '''n2002 : '''
+  osfloor.append(len(operand_stack))
+
+def p_n2003(p):
+  '''n2003 : '''
+  osfloor.pop()
 
 # Arguments definition statement
 def p_args(p):
@@ -779,10 +796,10 @@ def p_auxq(p):
 
 # Array, Matrix or Datatable direction
 def p_direction(p):
-  '''direction : ID BOX_L expression BOX_R
-               | ID BOX_L expression COMMA expression BOX_R
-               | ID COLON STRING BOX_L expression BOX_R'''
-  if p[4] == ']':
+  '''direction : ID BOX_L n2301 expression n2302 BOX_R
+               | ID BOX_L n2301 expression n2302 COMMA n2301 expression n2302 BOX_R
+               | ID COLON STRING BOX_L n2301 expression n2302 BOX_R'''
+  if p[6] == ']':
     for x in function_dir[current_function][5]:
       if p[1] == x[0]:
         if len(x) > 2:
@@ -815,9 +832,9 @@ def p_direction(p):
                 else: raise zs.ZenTypeMismatch("zen::cmp > cannot use non-integer index for list.")
               else: raise zs.ZenTypeMismatch(f"zen::cmp > {x[0]} is not a list.")
             else: raise zs.ZenSegmentationFault(f"zen::cmp > {x[0]} is not subscriptable.")
-        else: raise zs.ZenUndefinedID(f"zen::cmp > '{p[-1]}' is never defined.")
-      else: raise zs.ZenUndefinedID(f"zen::cmp > '{p[-1]}' is never defined.")
-  elif p[4] == ',':
+        else: raise zs.ZenUndefinedID(f"zen::cmp > '{p[1]}' is never defined.")
+      else: raise zs.ZenUndefinedID(f"zen::cmp > '{p[1]}' is never defined.")
+  elif p[6] == ',':
     for x in function_dir[current_function][5]:
       if p[1] == x[0]:
         if len(x) > 2:
@@ -866,8 +883,8 @@ def p_direction(p):
                 else: raise zs.ZenTypeMismatch("zen::cmp > cannot use non-integer index for list.")
               else: raise zs.ZenTypeMismatch(f"zen::cmp > {x[0]} is not a matrix.")
             else: raise zs.ZenSegmentationFault(f"zen::cmp > {x[0]} is not subscriptable.")
-        else: raise zs.ZenUndefinedID(f"zen::cmp > '{p[-1]}' is never defined.")
-      else: raise zs.ZenUndefinedID(f"zen::cmp > '{p[-1]}' is never defined.")
+        else: raise zs.ZenUndefinedID(f"zen::cmp > '{p[1]}' is never defined.")
+      else: raise zs.ZenUndefinedID(f"zen::cmp > '{p[1]}' is never defined.")
   else:
     for x in function_dir[current_function][5]:
       if p[1] == x[0]:
@@ -920,7 +937,14 @@ def p_direction(p):
             else: raise zs.ZenTypeMismatch(f"zen::cmp > {x[0]} is not a datatable.")
         else: raise zs.ZenUndefinedID(f"zen::cmp > '{p[1]}' is never defined.")
       else: raise zs.ZenUndefinedID(f"zen::cmp > '{p[1]}' is never defined.")
-  
+
+def p_n2301(p):
+  '''n2301 : '''
+  osfloor.append(len(operand_stack))
+
+def p_n2302(p):
+  '''n2302 : '''
+  osfloor.pop()
 
 # Arithmetic expression
 def p_expression(p):
@@ -931,7 +955,7 @@ def p_expression(p):
 
 def p_n2401(p):
   '''n2401 : '''
-  if len(operator_stack) > 0:
+  if len(operator_stack) > osfloor[-1]:
     if operator_stack[-1] == 1 or operator_stack[-1] == 2:
       right, rtype = operand_stack[-1]
       operand_stack.pop()
@@ -962,7 +986,7 @@ def p_term(p):
 
 def p_n2501(p):
   '''n2501 : '''
-  if len(operator_stack) > 0:
+  if len(operator_stack) > osfloor[-1]:
     if operator_stack[-1] == 3 or operator_stack[-1] == 4:
       right, rtype = operand_stack[-1]
       operand_stack.pop()
@@ -1013,8 +1037,8 @@ def p_factor(p):
             | direction
             | function
             | datacalc
-            | PARNT_L expression PARNT_R
-            | BRACE_L condition BRACE_R'''
+            | PARNT_L n2704 expression PARNT_R n2705
+            | BRACE_L n2704 condition BRACE_R n2705'''
   pass
 
 def p_n2701(p):
@@ -1050,6 +1074,14 @@ def p_n2703(p):
   const = -const
   addr = searchconst(const)
   operand_stack.append((addr, ctype))
+
+def p_n2704(p):
+  '''n2704 : '''
+  osfloor.append(len(operand_stack))
+
+def p_n2705(p):
+  '''n2705 : '''
+  osfloor.pop()
 
 # Logical operator appearance
 def p_logicop(p):
@@ -1340,7 +1372,9 @@ def p_datadist(p):
 def p_mains(p):
   '''mains : MAIN BRACE_L n0001 vars statement auxl END BRACE_R'''
   schema.append((999,-1,-1,-1))
+  # --- Koan Templates Creation for Tesseract
   fd = adapt_function_dir()
+  # --- Function Directory Memory Release
   function_dir.clear()
   # --- Koan Memory Release
   koan.rest()

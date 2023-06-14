@@ -1,4 +1,4 @@
-# David Macías (1283419) & Hannia Ortega (1283410)
+# David Macías (1283419)
 # ZENCODE [禅] ZenMind Administrators
 CONST_BOTTOM = 1500001
 MALLOCMAX = 999
@@ -18,7 +18,9 @@ def mindspace(type: str, kind):
   if kind == "temporal": x += 4
   return x
 
-# Variable Renamer
+# ---Koan: Variable Renamer------------------------------------------
+# -----Assigns an identifier (meimei) to variables declared to be
+# -----found in a Tesseract template.
 class Koan:
   def __init__(self):
     self.ck = -1
@@ -31,6 +33,10 @@ class Koan:
     self.ck += 1
     return CONST_BOTTOM + self.ck
 
+  # Meimei (from Japanese '命名', 'naming')
+  # --Transitional name for variables. Consist of three sections
+  # --separated by points: 'Function.Type.ID'. The last two elements
+  # --are the row and column of the Tesseract's face.
   def meimei(self, function, type, kind):
     if isinstance(type, str):
       sector = mindspace(type, kind)
@@ -59,7 +65,9 @@ class Koan:
     self.ck = -1
     self.fnk = []
 
-# Memory Administrator
+# ---MasterMind: Memory Administrator--------------------------------
+# -----Administrates memory locations, allocates Tesseract templates
+# -----in the memory, and translates meimei into directions.
 class MasterMind:
   def __init__(self, is_main: bool):
     self.next_free = []

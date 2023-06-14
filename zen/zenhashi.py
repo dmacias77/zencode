@@ -1,4 +1,4 @@
-# David Macías (1283419) & Hannia Ortega (1283410)
+# David Macías (1283419)
 # ZENCODE [禅橋] Hashi
 from zen.zenmind import MasterMind
 import zen.zensemantics as zs
@@ -27,7 +27,7 @@ to_main = True
 
 # ---Helper Functions------------------------------------------------
 
-# ---Addr-
+# -*-Addr-
 # -----Returns the real address based on their meimei and the Tesseract's
 # -----current rotation.
 def addr(element):
@@ -44,7 +44,7 @@ def addr(element):
   else:
     return element
 
-# ---DropFace-
+# -*-DropFace-
 # -----Drops the current face of the Tesseract, and returns to the last one.
 def dropface():
   for x in tesseract[-1]:
@@ -52,6 +52,8 @@ def dropface():
       zenmind.pop(y)
   tesseract.pop()
 
+# -*-NewFace-
+# -----Adds a new face to the Tesseract, and shifts to it.
 def newface(template):
   types = []
   indexes = []
@@ -69,7 +71,7 @@ def newface(template):
     indexes = []
   tesseract.append(types)
 
-# ---PassConstants-
+# -*-PassConstants-
 # -----Allocs the constant list into the memory.
 # -----Tip: Direction 1500000 is only used for statistical results of
 # -----datatables.
@@ -78,7 +80,7 @@ def pass_constants():
   for i in range(len(const_list)):
     zenmind[1500001+i] = const_list[i]
 
-# ---Value-
+# -*-Value-
 # -----Returns the real value based on their meimei and the Tesseract's
 # -----current rotation.
 def value(element):
@@ -98,7 +100,7 @@ def value(element):
   else:
     return zenmind[element]
 
-# ---Verbose-
+# -*-Verbose-
 # -----Prints only if show_vb is True.
 def verbose(text):
   if show_vb: print(text)
@@ -422,7 +424,7 @@ def interpret():
     # Update End
     elif instruction[0] == 49:
       verbose("> done updating")
-    # End
+    # Function End
     elif instruction[0] == 99:
       verbose("> done with function!")
       state = return_stack[-1]
@@ -448,8 +450,8 @@ def meditate(list1, list2, list3):
       print(i, ": ", schema[i])
     print("\n")
       
-  pass_constants() # Initializes the memory with the constants.
-  newface(0)       # Initializes the Tesseract
+  pass_constants()     # Initializes the memory with the constants.
+  newface(0)           # Initializes the Tesseract
 
   # Runs the interpretation.
   program = interpret()

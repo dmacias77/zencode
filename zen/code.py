@@ -1,5 +1,5 @@
-# David Macías (1283419) & Hannia Ortega (1283410)
-# ZENCODE [禅]
+# David Macías (1283419)
+# ZENCODE [禅] 
 from zen.zenmaster import parser
 
 def zazen(file):

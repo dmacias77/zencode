@@ -1,5 +1,5 @@
-# Required Test 1 #
-# Factorial (CÃ­clico) #
+# Additional Test #
+# Factorial (Cíclico + Pelos) #
 
 function int factorial(int n) {
   set int i, result;
@@ -11,13 +11,17 @@ function int factorial(int n) {
   return result;
 }
 
+function int pelos(int n) {
+  return factorial(3 + n * 2);
+}
+
 main {
   set int fact, x;
 
-  cwrite << "NÃºmero: ";
+  cwrite << "Número: ";
   cread << x;
 
-  fact << factorial(x);
+  fact << pelos(x);
   cwrite << " ";
   cwrite << "Factorial: ";
   cwrite << fact;
